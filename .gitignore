@@ -1,0 +1,31 @@
+# env & secrets
+.env
+infra/secrets/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Java
+services/core-api/build/
+services/core-api/target/
+services/core-api/.gradle/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+services/web/dist/
+
+# ML
+ml/data/
+*.ckpt
+*.safetensors

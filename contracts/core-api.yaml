@@ -1,0 +1,178 @@
+openapi: 3.1.0
+info:
+  title: core-api
+  version: 0.1.0
+  description: Авторизация, пользователи, собеседования.
+servers:
+  - url: /api
+
+paths:
+  /auth/register:
+    post:
+      summary: Регистрация
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        '201':
+          description: Создан
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResponse' }
+
+  /auth/login:
+    post:
+      summary: Логин
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: OK. Refresh-токен ставится в httpOnly cookie.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResponse' }
+
+  /auth/refresh:
+    post:
+      summary: Обновить access-токен по refresh cookie
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenResponse' }
+
+  /auth/logout:
+    post:
+      summary: Выход (инвалидирует refresh-токен)
+      responses:
+        '204': { description: OK }
+
+  /.well-known/jwks.json:
+    get:
+      summary: Публичные ключи для проверки JWT (используется ai-service)
+      security: []
+      responses:
+        '200': { description: JWKS }
+
+  /users/me:
+    get:
+      summary: Текущий пользователь
+      security: [{ bearer: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+
+  /interviews:
+    get:
+      summary: История собеседований пользователя
+      security: [{ bearer: [] }]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Interview' }
+    post:
+      summary: Создать собеседование
+      security: [{ bearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateInterviewRequest' }
+      responses:
+        '201':
+          description: Создано
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Interview' }
+
+  /interviews/{id}:
+    get:
+      summary: Собеседование с результатом
+      security: [{ bearer: [] }]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Interview' }
+
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+        name: { type: string }
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+
+    TokenResponse:
+      type: object
+      required: [accessToken, expiresIn]
+      properties:
+        accessToken: { type: string }
+        expiresIn: { type: integer, description: секунды }
+
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string }
+        name: { type: string }
+
+    CreateInterviewRequest:
+      type: object
+      required: [position, level]
+      properties:
+        position: { type: string, example: Java Backend Developer }
+        level: { type: string, enum: [intern, junior, middle, senior] }
+        topics:
+          type: array
+          items: { type: string }
+
+    Interview:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        position: { type: string }
+        level: { type: string }
+        status: { type: string, enum: [CREATED, IN_PROGRESS, FINISHED] }
+        createdAt: { type: string, format: date-time }
+        result: { $ref: '#/components/schemas/InterviewResult' }
+
+    InterviewResult:
+      type: object
+      nullable: true
+      properties:
+        score: { type: integer, minimum: 0, maximum: 100 }
+        summary: { type: string }
+        strengths: { type: array, items: { type: string } }
+        weaknesses: { type: array, items: { type: string } }

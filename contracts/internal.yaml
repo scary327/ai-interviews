@@ -1,0 +1,47 @@
+openapi: 3.1.0
+info:
+  title: internal
+  version: 0.1.0
+  description: |
+    Межсервисные эндпоинты. Доступны только внутри docker-сети,
+    nginx их не проксирует. Авторизация: заголовок X-Internal-Token.
+servers:
+  - url: http://core-api:8080/internal
+
+security:
+  - internalToken: []
+
+paths:
+  /interviews/{id}:
+    get:
+      summary: (ai-service → core-api) Параметры собеседования для построения промпта
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: './core-api.yaml#/components/schemas/Interview'
+
+  /interviews/{id}/result:
+    put:
+      summary: (ai-service → core-api) Сохранить итоговую оценку
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './core-api.yaml#/components/schemas/InterviewResult'
+      responses:
+        '204': { description: OK }
+
+components:
+  securitySchemes:
+    internalToken:
+      type: apiKey
+      in: header
+      name: X-Internal-Token

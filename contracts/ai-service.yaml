@@ -1,0 +1,101 @@
+openapi: 3.1.0
+info:
+  title: ai-service
+  version: 0.1.0
+  description: Диалог с LLM в рамках собеседования. JWT выдаёт core-api.
+servers:
+  - url: /ai
+
+security:
+  - bearer: []
+
+paths:
+  /interviews/{id}/messages:
+    get:
+      summary: История сообщений собеседования
+      parameters:
+        - $ref: '#/components/parameters/InterviewId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Message' }
+    post:
+      summary: Отправить ответ кандидата, получить реплику интервьюера стримом
+      parameters:
+        - $ref: '#/components/parameters/InterviewId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SendMessageRequest' }
+      responses:
+        '200':
+          description: |
+            Server-Sent Events. События:
+            - `delta`  — {"text": "..."} кусок ответа
+            - `done`   — {"messageId": "..."} ответ завершён
+            - `error`  — {"detail": "..."}
+          content:
+            text/event-stream:
+              schema: { type: string }
+
+  /interviews/{id}/finish:
+    post:
+      summary: Завершить собеседование и получить оценку
+      description: Результат также сохраняется в core-api через /internal.
+      parameters:
+        - $ref: '#/components/parameters/InterviewId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Evaluation' }
+
+  /health:
+    get:
+      summary: Healthcheck
+      security: []
+      responses:
+        '200': { description: OK }
+
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    InterviewId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  schemas:
+    SendMessageRequest:
+      type: object
+      required: [text]
+      properties:
+        text: { type: string }
+
+    Message:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        role: { type: string, enum: [interviewer, candidate] }
+        text: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    Evaluation:
+      type: object
+      properties:
+        score: { type: integer, minimum: 0, maximum: 100 }
+        summary: { type: string }
+        strengths: { type: array, items: { type: string } }
+        weaknesses: { type: array, items: { type: string } }
