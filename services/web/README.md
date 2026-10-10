@@ -1,38 +1,75 @@
-# web
+# React + TypeScript + Vite
 
-React + TypeScript (Vite). SSR не нужен: бэкенды отдельные, страницы закрыты
-логином. Если понадобятся публичные SEO-страницы, можно перейти на Next.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Целевая структура
+Currently, two official plugins are available:
+
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+
+## React Compiler
+
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
+
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 
 ```
-web/
-├── src/
-│   ├── app/                 # точка входа, роутер, провайдеры (query, auth)
-│   ├── pages/               # страницы: собираются из features
-│   │   ├── login/
-│   │   ├── dashboard/
-│   │   └── interview/
-│   ├── features/            # фичи с логикой
-│   │   ├── auth/            # формы, хранение токена, refresh
-│   │   └── interview/       # чат, чтение SSE-стрима, результат
-│   └── shared/
-│       ├── api/
-│       │   ├── generated/   # типы из contracts/ (не редактировать руками)
-│       │   ├── core.ts      # клиент /api
-│       │   └── ai.ts        # клиент /ai
-│       ├── ui/              # кнопки, инпуты и т.п.
-│       └── lib/
-├── public/
-├── package.json
-└── Dockerfile               # сборка → статика в nginx
+
+You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+
 ```
-
-Импорты направлены строго вниз: `pages → features → shared`. Фичи не
-импортируют друг друга.
-
-## Работа с API
-
-- Базовые пути относительные: `/api` и `/ai`. В dev их проксирует Vite, в
-  prod — nginx.
-- Типы генерируются командой `make gen-types` (openapi-typescript).
