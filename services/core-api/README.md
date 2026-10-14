@@ -25,7 +25,7 @@ core-api/
 │   ├── application.yml
 │   └── db/migration/    # Flyway: V1__init.sql, ...
 ├── src/test/java/...
-├── build.gradle.kts     # (или pom.xml)
+├── pom.xml
 └── Dockerfile
 ```
 
