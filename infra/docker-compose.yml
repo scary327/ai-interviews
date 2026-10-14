@@ -58,7 +58,7 @@ services:
       AI_DB_USER: ${AI_DB_USER}
       AI_DB_PASSWORD: ${AI_DB_PASSWORD}
     ports:
-      - "5432:5432"   # для локальной отладки
+      - "${POSTGRES_PORT:-5432}:5432"   # для локальной отладки
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./postgres/init.sh:/docker-entrypoint-initdb.d/init.sh:ro
