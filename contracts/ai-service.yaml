@@ -12,6 +12,8 @@ security:
 paths:
   /interviews/{id}/messages:
     get:
+      operationId: listMessages
+      tags: [chat]
       summary: История сообщений собеседования
       parameters:
         - $ref: '#/components/parameters/InterviewId'
@@ -24,6 +26,8 @@ paths:
                 type: array
                 items: { $ref: '#/components/schemas/Message' }
     post:
+      operationId: sendMessage
+      tags: [chat]
       summary: Отправить ответ кандидата, получить реплику интервьюера стримом
       parameters:
         - $ref: '#/components/parameters/InterviewId'
@@ -45,6 +49,8 @@ paths:
 
   /interviews/{id}/finish:
     post:
+      operationId: finishInterview
+      tags: [chat]
       summary: Завершить собеседование и получить оценку
       description: Результат также сохраняется в core-api через /internal.
       parameters:
@@ -58,6 +64,8 @@ paths:
 
   /health:
     get:
+      operationId: health
+      tags: [system]
       summary: Healthcheck
       security: []
       responses:
@@ -86,6 +94,7 @@ components:
 
     Message:
       type: object
+      required: [id, role, text, createdAt]
       properties:
         id: { type: string, format: uuid }
         role: { type: string, enum: [interviewer, candidate] }
@@ -94,6 +103,7 @@ components:
 
     Evaluation:
       type: object
+      required: [score, summary, strengths, weaknesses]
       properties:
         score: { type: integer, minimum: 0, maximum: 100 }
         summary: { type: string }

@@ -9,6 +9,8 @@ servers:
 paths:
   /auth/register:
     post:
+      operationId: register
+      tags: [auth]
       summary: Регистрация
       requestBody:
         required: true
@@ -24,6 +26,8 @@ paths:
 
   /auth/login:
     post:
+      operationId: login
+      tags: [auth]
       summary: Логин
       requestBody:
         required: true
@@ -39,6 +43,8 @@ paths:
 
   /auth/refresh:
     post:
+      operationId: refreshToken
+      tags: [auth]
       summary: Обновить access-токен по refresh cookie
       responses:
         '200':
@@ -49,12 +55,16 @@ paths:
 
   /auth/logout:
     post:
+      operationId: logout
+      tags: [auth]
       summary: Выход (инвалидирует refresh-токен)
       responses:
         '204': { description: OK }
 
   /.well-known/jwks.json:
     get:
+      operationId: getJwks
+      tags: [auth]
       summary: Публичные ключи для проверки JWT (используется ai-service)
       security: []
       responses:
@@ -62,6 +72,8 @@ paths:
 
   /users/me:
     get:
+      operationId: getMe
+      tags: [users]
       summary: Текущий пользователь
       security: [{ bearer: [] }]
       responses:
@@ -73,6 +85,8 @@ paths:
 
   /interviews:
     get:
+      operationId: listInterviews
+      tags: [interviews]
       summary: История собеседований пользователя
       security: [{ bearer: [] }]
       responses:
@@ -84,6 +98,8 @@ paths:
                 type: array
                 items: { $ref: '#/components/schemas/Interview' }
     post:
+      operationId: createInterview
+      tags: [interviews]
       summary: Создать собеседование
       security: [{ bearer: [] }]
       requestBody:
@@ -100,6 +116,8 @@ paths:
 
   /interviews/{id}:
     get:
+      operationId: getInterview
+      tags: [interviews]
       summary: Собеседование с результатом
       security: [{ bearer: [] }]
       parameters:
@@ -143,34 +161,51 @@ components:
 
     User:
       type: object
+      required: [id, email]
       properties:
         id: { type: string, format: uuid }
         email: { type: string }
         name: { type: string }
+
+    InterviewLevel:
+      type: string
+      enum: [intern, junior, middle, senior]
+
+    InterviewStatus:
+      type: string
+      enum: [CREATED, IN_PROGRESS, FINISHED]
 
     CreateInterviewRequest:
       type: object
       required: [position, level]
       properties:
         position: { type: string, example: Java Backend Developer }
-        level: { type: string, enum: [intern, junior, middle, senior] }
+        level: { $ref: '#/components/schemas/InterviewLevel' }
         topics:
           type: array
           items: { type: string }
 
     Interview:
       type: object
+      required: [id, position, level, status, createdAt]
       properties:
         id: { type: string, format: uuid }
         position: { type: string }
-        level: { type: string }
-        status: { type: string, enum: [CREATED, IN_PROGRESS, FINISHED] }
+        level: { $ref: '#/components/schemas/InterviewLevel' }
+        status: { $ref: '#/components/schemas/InterviewStatus' }
         createdAt: { type: string, format: date-time }
-        result: { $ref: '#/components/schemas/InterviewResult' }
+        topics:
+          type: array
+          items: { type: string }
+        result:
+          description: Заполняется после завершения собеседования
+          oneOf:
+            - { $ref: '#/components/schemas/InterviewResult' }
+            - { type: 'null' }
 
     InterviewResult:
       type: object
-      nullable: true
+      required: [score, summary, strengths, weaknesses]
       properties:
         score: { type: integer, minimum: 0, maximum: 100 }
         summary: { type: string }

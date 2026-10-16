@@ -1,0 +1,5 @@
+# Линт и формат только изменённых файлов фронта.
+# Без node_modules (например, у тех, кто пишет только бэк) — пропускаем.
+if [ -d services/web/node_modules ]; then
+    cd services/web && npx --no-install lint-staged
+fi

@@ -1,0 +1,10 @@
+import { RouterProvider } from "@tanstack/react-router";
+
+import { AppProviders } from "./providers/AppProviders";
+import { router } from "./router";
+
+export const App = () => (
+    <AppProviders>
+        <RouterProvider router={router} />
+    </AppProviders>
+);
