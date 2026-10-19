@@ -2,6 +2,22 @@
 
 Python 3.12 + FastAPI. Диалог с LLM, оценка ответов.
 
+## Запуск
+
+Нужен [uv](https://docs.astral.sh/uv/).
+
+```bash
+uv sync
+uv run uvicorn app.main:app --reload --port 8000
+```
+
+- http://localhost:8000/health — healthcheck
+- http://localhost:8000/docs — Swagger UI
+
+Префикса `/ai` в роутах нет: его срезают nginx и dev-прокси Vite.
+
+Новая зависимость: `uv add <package>` (обновит `pyproject.toml` и `uv.lock`).
+
 ## Целевая структура
 
 ```
@@ -38,7 +54,7 @@ ai-service/
 
 | Переменная | Назначение |
 |---|---|
-| `LLM_PROVIDER` | `routerai` \| `local` |
+| `LLM_PROVIDER` | `fake` (по умолчанию, без токена) \| `routerai` \| `local` |
 | `ROUTERAI_API_KEY`, `ROUTERAI_MODEL` | доступ к RouterAI |
 | `DB_URL` | Postgres, схема `ai` |
 | `CORE_API_URL` | внутренний адрес core-api |
