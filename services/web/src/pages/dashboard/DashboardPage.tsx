@@ -4,7 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { PlusIcon } from "lucide-react";
 
 import { useCurrentUser } from "@/modules/auth";
-import { InterviewList } from "@/modules/interview";
+import { InterviewList, InterviewStats } from "@/modules/interview";
 import { PageHeader } from "@/shared/components/PageHeader";
 import { Button } from "@/shared/ui/button";
 
@@ -31,6 +31,8 @@ export const DashboardPage = () => {
                     </Button>
                 }
             />
+
+            <InterviewStats />
 
             <Section title="Незавершённые">
                 <InterviewList status="IN_PROGRESS" limit={3} />
