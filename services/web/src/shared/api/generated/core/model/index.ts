@@ -7,6 +7,8 @@
  */
 
 export * from './createInterviewRequest';
+export * from './criterionScore';
+export * from './criterionScoreKey';
 export * from './interview';
 export * from './interviewLevel';
 export * from './interviewResult';

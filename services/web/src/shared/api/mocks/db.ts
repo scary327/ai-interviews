@@ -25,7 +25,22 @@ export const db = {
                 score: 72,
                 summary: "Хорошая база по Java Core, но есть пробелы в транзакциях Spring.",
                 strengths: ["Коллекции и их сложность", "Понимание ООП"],
-                weaknesses: ["@Transactional и propagation", "Индексы в PostgreSQL"]
+                weaknesses: ["@Transactional и propagation", "Индексы в PostgreSQL"],
+                criteria: [
+                    { key: "technical_knowledge", score: 80, comment: "Уверенно знает Java Core." },
+                    {
+                        key: "practical_depth",
+                        score: 65,
+                        comment: "Мало примеров из реальных проектов."
+                    },
+                    { key: "communication", score: 75, comment: "Отвечает структурно." },
+                    { key: "problem_solving", score: 68, comment: "Решение находит, но не сразу." }
+                ],
+                recommendations: [
+                    "Разобрать propagation в @Transactional",
+                    "Потренировать EXPLAIN и индексы в PostgreSQL",
+                    "Готовить примеры из своих проектов"
+                ]
             }
         }
     ] as Interview[],

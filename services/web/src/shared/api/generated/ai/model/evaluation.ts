@@ -5,14 +5,42 @@
  * Диалог с LLM в рамках собеседования. JWT выдаёт core-api.
  * OpenAPI spec version: 0.1.0
  */
+import type { EvaluationCriterion } from './evaluationCriterion';
 
 export interface Evaluation {
   /**
+     * Округлённое (half-up) среднее оценок по критериям
      * @minimum 0
      * @maximum 100
      */
   score: number;
+  /**
+     * @minLength 1
+     * @maxLength 4000
+     */
   summary: string;
+  /**
+     * @maxItems 10
+     * @items.minLength 1
+     * @items.maxLength 500
+     */
   strengths: string[];
+  /**
+     * @maxItems 10
+     * @items.minLength 1
+     * @items.maxLength 500
+     */
   weaknesses: string[];
+  /**
+     * Ровно 4 критерия, каждый ключ по одному разу
+     * @minItems 4
+     * @maxItems 4
+     */
+  criteria: EvaluationCriterion[];
+  /**
+     * @maxItems 10
+     * @items.minLength 1
+     * @items.maxLength 500
+     */
+  recommendations: string[];
 }
