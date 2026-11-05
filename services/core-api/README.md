@@ -45,4 +45,30 @@ core-api/
 | `JWT_ACCESS_TTL` | время жизни access-токена |
 | `INTERNAL_API_TOKEN` | токен для вызовов от ai-service |
 
+## Локальный запуск
+
+Без приватного ключа JWT приложение не стартует. Ключ генерируется один раз,
+из корня репозитория (`infra/secrets/` в `.gitignore`):
+
+```bash
+make jwt-keys
+# или без make (Windows, Git Bash):
+mkdir -p infra/secrets
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out infra/secrets/jwt_private.pem
+```
+
+Публичный ключ core-api вычисляет из приватного и отдаёт на
+`/api/.well-known/jwks.json`, отдельный файл не нужен.
+
+При запуске из IDE в переменных окружения указать:
+
+```
+DB_URL=jdbc:postgresql://localhost:5432/ai_interviews?currentSchema=core
+DB_USER=core
+DB_PASSWORD=core
+JWT_PRIVATE_KEY_PATH=<абсолютный путь к репозиторию>/infra/secrets/jwt_private.pem
+```
+
+Postgres можно поднять отдельно: `docker compose -f infra/docker-compose.yml --env-file .env up -d postgres`.
+
 API: [contracts/core-api.yaml](../../contracts/core-api.yaml)
