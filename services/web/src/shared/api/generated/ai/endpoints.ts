@@ -25,9 +25,14 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  BadGatewayResponse,
+  ErrorDetail,
   Evaluation,
   Message,
-  SendMessageRequest
+  NotFoundResponse,
+  SendMessageRequest,
+  UnauthorizedResponse,
+  UnavailableResponse
 } from './model';
 
 import { aiHttp } from '../../http';
@@ -185,7 +190,7 @@ export const finishInterview = (
 
 export const getFinishInterviewMutationKey = () => ['finishInterview'] as const;
 
-export const getFinishInterviewMutationOptions = <TError = ErrorType<unknown>,
+export const getFinishInterviewMutationOptions = <TError = ErrorType<UnauthorizedResponse | NotFoundResponse | ErrorDetail | BadGatewayResponse | UnavailableResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof finishInterview>>, TError,FinishInterviewMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof finishInterview>>, TError,FinishInterviewMutationVariables, TContext> => {
 
@@ -214,13 +219,13 @@ const {mutation: mutationOptions} = options ?
 
     export type FinishInterviewMutationResult = NonNullable<Awaited<ReturnType<typeof finishInterview>>>
 
-    export type FinishInterviewMutationError = ErrorType<unknown>
+    export type FinishInterviewMutationError = ErrorType<UnauthorizedResponse | NotFoundResponse | ErrorDetail | BadGatewayResponse | UnavailableResponse>
     export type FinishInterviewMutationVariables = {id: string}
 
     /**
  * @summary Завершить собеседование и получить оценку
  */
-export const useFinishInterview = <TError = ErrorType<unknown>,
+export const useFinishInterview = <TError = ErrorType<UnauthorizedResponse | NotFoundResponse | ErrorDetail | BadGatewayResponse | UnavailableResponse>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof finishInterview>>, TError,FinishInterviewMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof finishInterview>>,

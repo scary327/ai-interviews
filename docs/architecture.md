@@ -89,14 +89,14 @@ web ──POST /api/auth/login──► core-api ──► { accessToken } + ref
 через API. Тогда сервисы можно разнести по разным базам без переписывания.
 
 - `core`: users, refresh_tokens, interviews, interview_results
-- `ai`: messages, prompt_versions, evaluations
+- `ai`: messages, interview_plans, evaluations
 
 Миграции: core-api — Flyway, ai-service — Alembic.
 
 ## Расширяемость LLM
 
 В ai-service весь доступ к модели идёт через интерфейс `LLMProvider`
-(`chat`, `stream`). Реализации:
+(`complete_json` — ответ по JSON-схеме, `stream`). Реализации:
 - `RouterAIProvider` — сейчас;
 - `LocalProvider` — потом, для своей дообученной модели.
 

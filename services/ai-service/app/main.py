@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from app.api import health, interviews
 from app.clients.core_api import CoreApiClient
 from app.config import settings
+from app.db.lock import lock_engine
 from app.db.session import engine
 from app.llm.factory import create_llm_provider
 
@@ -22,6 +23,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     await app.state.llm.close()
     await app.state.core_api.close()
     await engine.dispose()
+    await lock_engine.dispose()
 
 
 app = FastAPI(title="ai-service", version="0.1.0", lifespan=lifespan)

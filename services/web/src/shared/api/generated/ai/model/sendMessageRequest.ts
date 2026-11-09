@@ -7,5 +7,9 @@
  */
 
 export interface SendMessageRequest {
+  /**
+     * @minLength 1
+     * @maxLength 4000
+     */
   text: string;
 }

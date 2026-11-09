@@ -35,13 +35,14 @@ export const useInterviewChat = (interviewId: string) => {
     const isStreaming = sentText !== null;
 
     const send = useCallback(
-        async (text: string) => {
+        async (text: string): Promise<boolean> => {
             const controller = new AbortController();
             abortRef.current = controller;
             setError(null);
             setSentText(text);
             setStreamedText("");
 
+            let done = false;
             try {
                 await postSse(
                     `/ai/interviews/${interviewId}/messages`,
@@ -53,17 +54,22 @@ export const useInterviewChat = (interviewId: string) => {
                                 const chunk = (JSON.parse(data) as { text: string }).text;
                                 setStreamedText((prev) => (prev ?? "") + chunk);
                             }
+                            if (event === "done") done = true;
                             if (event === "error") {
                                 throw new Error((JSON.parse(data) as { detail: string }).detail);
                             }
                         }
                     }
                 );
+                // Стрим закрылся без done — ответ на сервере не сохранён
+                if (!done) throw new Error("Ответ интервьюера прервался — отправьте ответ ещё раз");
                 await queryClient.invalidateQueries({
                     queryKey: getListMessagesQueryKey(interviewId)
                 });
+                return true;
             } catch (e) {
                 if (!controller.signal.aborted) setError(getErrorMessage(e));
+                return false;
             } finally {
                 setSentText(null);
                 setStreamedText(null);
