@@ -16,7 +16,12 @@ DB_URL=postgresql+asyncpg://ai:<пароль ai>@localhost:5432/ai_interviews
 JWKS_URL=http://localhost:8080/api/.well-known/jwks.json
 CORE_API_URL=http://localhost:8080
 INTERNAL_API_TOKEN=<тот же, что у core-api>
+LLM_PROVIDER=routerai
+ROUTERAI_API_KEY=<ключ RouterAI>
 ```
+
+`LLM_PROVIDER=routerai` без ключа сервис не запускает; без сети и ключа — `LLM_PROVIDER=fake`.
+Каждый вызов модели пишет в лог строку расхода: модель, токены, время.
 
 ```bash
 uv sync
@@ -51,6 +56,8 @@ ai-service/
 │   ├── llm/                 # всё, что касается модели
 │   │   ├── base.py          # Protocol LLMProvider: chat(), stream()
 │   │   ├── routerai.py      # реализация через RouterAI
+│   │   ├── fake.py          # без сети: для разработки и проверок
+│   │   ├── errors.py        # LLMError, LLMUnavailable — наружу не выходят исключения SDK
 │   │   ├── local.py         # позже: своя модель
 │   │   └── factory.py       # выбор провайдера по LLM_PROVIDER
 │   ├── prompts/             # промпты — файлами, не строками в коде
@@ -73,8 +80,10 @@ ai-service/
 
 | Переменная | Назначение |
 |---|---|
-| `LLM_PROVIDER` | `fake` (по умолчанию, без токена) \| `routerai` \| `local` |
-| `ROUTERAI_API_KEY`, `ROUTERAI_MODEL` | доступ к RouterAI |
+| `LLM_PROVIDER` | `fake` (по умолчанию, без сети и ключа) \| `routerai`; своя модель (`local`) — позже, ADR 0003 |
+| `ROUTERAI_API_KEY` | ключ RouterAI; обязателен при `LLM_PROVIDER=routerai` |
+| `ROUTERAI_MODEL` | по умолчанию `deepseek/deepseek-v4.1-flash`; модель должна поддерживать отключение рассуждения (`reasoning.enabled=false`) |
+| `ROUTERAI_BASE_URL` | по умолчанию `https://routerai.ru/api/v1` |
 | `DB_URL` | обязательная; Postgres, `postgresql+asyncpg://…`, схема `ai` |
 | `CORE_API_URL` | внутренний адрес core-api, по умолчанию `http://localhost:8080` |
 | `JWKS_URL` | обязательная; откуда брать публичный ключ |
