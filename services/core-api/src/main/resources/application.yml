@@ -16,3 +16,6 @@ server:
 jwt:
   private-key-path: ${JWT_PRIVATE_KEY_PATH}
   access-ttl: ${JWT_ACCESS_TTL:15m}
+
+internal:
+  api-token: ${INTERNAL_API_TOKEN:}

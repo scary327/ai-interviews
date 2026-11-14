@@ -59,10 +59,12 @@ web ──POST /api/auth/login──► core-api ──► { accessToken } + ref
 ```
 1. web ──POST /api/interviews──────────────► core-api     создаёт интервью (status=CREATED)
 2. web ──POST /ai/interviews/{id}/messages─► ai-service   (Authorization: Bearer <jwt>)
+       ai-service ──GET /internal/interviews/{id}────────► core-api   параметры и userId (сверка с sub)
+       ai-service ──POST /internal/interviews/{id}/start─► core-api   на первом сообщении: IN_PROGRESS
        ◄──────── text/event-stream ─────────              токены ответа LLM стримом
 3. ... повторяется ...
 4. web ──POST /ai/interviews/{id}/finish───► ai-service   считает оценку
-       ai-service ──PUT /internal/interviews/{id}/result─► core-api   сохраняет результат
+       ai-service ──PUT /internal/interviews/{id}/result─► core-api   сохраняет результат, FINISHED
 ```
 
 Стриминг идёт **напрямую** во фронт через ai-service, а не через Java:

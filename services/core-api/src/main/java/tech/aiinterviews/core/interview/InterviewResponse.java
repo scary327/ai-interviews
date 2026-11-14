@@ -10,7 +10,8 @@ public record InterviewResponse(
 		InterviewLevel level,
 		InterviewStatus status,
 		Instant createdAt,
-		List<String> topics
+		List<String> topics,
+		InterviewResultDto result
 ) {
 
 	public static InterviewResponse from(Interview interview) {
@@ -20,7 +21,8 @@ public record InterviewResponse(
 				interview.getLevel(),
 				interview.getStatus(),
 				interview.getCreatedAt(),
-				List.copyOf(interview.getTopics())
+				List.copyOf(interview.getTopics()),
+				interview.getResult() == null ? null : InterviewResultDto.from(interview.getResult())
 		);
 	}
 

@@ -7,6 +7,8 @@
  */
 
 export * from './evaluation';
+export * from './evaluationCriterion';
+export * from './evaluationCriterionKey';
 export * from './message';
 export * from './messageRole';
 export * from './sendMessageRequest';

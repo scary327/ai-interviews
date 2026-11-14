@@ -6,10 +6,29 @@ Python 3.12 + FastAPI. Диалог с LLM, оценка ответов.
 
 Нужен [uv](https://docs.astral.sh/uv/).
 
+Сервису нужны Postgres (схема `ai`) и запущенный core-api — от него JWKS для проверки токенов и
+`/internal` для данных собеседований. Переменные (см. «Конфигурация») задаются окружением или файлом
+`.env` в папке сервиса (`services/ai-service/.env`, в git не попадает). Без `DB_URL`, `JWKS_URL` и
+`INTERNAL_API_TOKEN` не стартуют ни сервис, ни миграции. Пример для локального запуска:
+
+```
+DB_URL=postgresql+asyncpg://ai:<пароль ai>@localhost:5432/ai_interviews
+JWKS_URL=http://localhost:8080/api/.well-known/jwks.json
+CORE_API_URL=http://localhost:8080
+INTERNAL_API_TOKEN=<тот же, что у core-api>
+```
+
 ```bash
 uv sync
+uv run alembic upgrade head
 uv run uvicorn app.main:app --reload --port 8000
 ```
+
+Новая миграция: поменять модели в `app/db/models.py`, затем
+`uv run alembic revision --autogenerate -m "<что меняем>"` и проверить сгенерированный файл.
+Автогенерацию запускать только под ролью `ai` (её схема по умолчанию — `ai`): под другой ролью в
+сравнение попадут чужие схемы.
+В Docker миграции применяются при старте контейнера.
 
 - http://localhost:8000/health — healthcheck
 - http://localhost:8000/docs — Swagger UI
@@ -56,9 +75,9 @@ ai-service/
 |---|---|
 | `LLM_PROVIDER` | `fake` (по умолчанию, без токена) \| `routerai` \| `local` |
 | `ROUTERAI_API_KEY`, `ROUTERAI_MODEL` | доступ к RouterAI |
-| `DB_URL` | Postgres, схема `ai` |
-| `CORE_API_URL` | внутренний адрес core-api |
-| `JWKS_URL` | откуда брать публичный ключ |
-| `INTERNAL_API_TOKEN` | токен для вызова `/internal/*` |
+| `DB_URL` | обязательная; Postgres, `postgresql+asyncpg://…`, схема `ai` |
+| `CORE_API_URL` | внутренний адрес core-api, по умолчанию `http://localhost:8080` |
+| `JWKS_URL` | обязательная; откуда брать публичный ключ |
+| `INTERNAL_API_TOKEN` | обязательная; токен для вызова `/internal/*` |
 
 API: [contracts/ai-service.yaml](../../contracts/ai-service.yaml)

@@ -67,7 +67,11 @@ DB_URL=jdbc:postgresql://localhost:5432/ai_interviews?currentSchema=core
 DB_USER=core
 DB_PASSWORD=core
 JWT_PRIVATE_KEY_PATH=<абсолютный путь к репозиторию>/infra/secrets/jwt_private.pem
+INTERNAL_API_TOKEN=<любая строка; та же, что у ai-service>
 ```
+
+Без `INTERNAL_API_TOKEN` приложение тоже не стартует: им ai-service ходит в `/internal/*`
+(заголовок `X-Internal-Token`).
 
 Postgres можно поднять отдельно: `docker compose -f infra/docker-compose.yml --env-file .env up -d postgres`.
 
