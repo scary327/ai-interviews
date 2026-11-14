@@ -6,9 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './badGatewayResponse';
+export * from './errorDetail';
 export * from './evaluation';
 export * from './evaluationCriterion';
 export * from './evaluationCriterionKey';
 export * from './message';
 export * from './messageRole';
+export * from './notFoundResponse';
 export * from './sendMessageRequest';
+export * from './unauthorizedResponse';
+export * from './unavailableResponse';

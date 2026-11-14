@@ -7,8 +7,9 @@ import openai
 from openai import AsyncOpenAI
 from openai.types import CompletionUsage
 from openai.types.chat import ChatCompletion
+from pydantic import ValidationError
 
-from app.llm.base import ChatMessage
+from app.llm.base import ChatMessage, M
 from app.llm.errors import LLMError, LLMUnavailable
 
 logger = logging.getLogger(__name__)
@@ -56,15 +57,40 @@ class RouterAIProvider:
     async def close(self) -> None:
         await self._client.close()
 
-    async def chat(
-        self, messages: Sequence[ChatMessage], *, max_tokens: int, json_mode: bool = False
-    ) -> str:
+    async def complete_json(
+        self, messages: Sequence[ChatMessage], *, schema: type[M], max_tokens: int
+    ) -> M:
+        text = await self._complete(messages, max_tokens=max_tokens)
+        try:
+            return schema.model_validate_json(text)
+        except ValidationError as e:
+            logger.warning("RouterAI JSON did not match %s, retrying", schema.__name__)
+            problems = "; ".join(
+                f"{'.'.join(str(p) for p in err['loc'])}: {err['msg']}"
+                for err in e.errors(include_url=False, include_input=False)
+            )
+            retry: list[ChatMessage] = [
+                *messages,
+                {"role": "assistant", "content": text},
+                {
+                    "role": "user",
+                    "content": f"Ответ не прошёл проверку: {problems}. Верни исправленный JSON целиком.",
+                },
+            ]
+        text = await self._complete(retry, max_tokens=max_tokens)
+        try:
+            return schema.model_validate_json(text)
+        except ValidationError as e:
+            logger.warning("RouterAI JSON did not match %s after a retry", schema.__name__)
+            raise LLMError("LLM answer did not match the schema") from e
+
+    async def _complete(self, messages: Sequence[ChatMessage], *, max_tokens: int) -> str:
         started = time.perf_counter()
         usage: CompletionUsage | None = None
         try:
             response = await self._client.chat.completions.create(
                 **self._params(messages, max_tokens),
-                response_format={"type": "json_object"} if json_mode else openai.omit,
+                response_format={"type": "json_object"},
             )
             if not isinstance(response, ChatCompletion):
                 raise ValueError("not a chat completion")
@@ -75,12 +101,13 @@ class RouterAIProvider:
             self._log_usage(usage, started)
         choice = response.choices[0] if response.choices else None
         if choice is None or not choice.message.content:
-            logger.warning("RouterAI returned an empty answer, finish_reason=%s", choice and choice.finish_reason)
+            logger.warning(
+                "RouterAI returned an empty answer, finish_reason=%s", choice and choice.finish_reason
+            )
             raise LLMError("LLM returned an empty answer")
         if choice.finish_reason in _CUT_REASONS:
             logger.warning("RouterAI answer was cut: %s", choice.finish_reason)
-            if json_mode or choice.finish_reason == "content_filter":
-                raise LLMError("LLM answer was cut")
+            raise LLMError("LLM answer was cut")
         return choice.message.content
 
     async def stream(self, messages: Sequence[ChatMessage], *, max_tokens: int) -> AsyncIterator[str]:

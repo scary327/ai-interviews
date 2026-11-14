@@ -43,9 +43,22 @@ paths:
             - `delta`  — {"text": "..."} кусок ответа
             - `done`   — {"messageId": "..."} ответ завершён
             - `error`  — {"detail": "..."}
+            Если стрим оборвался или пришло `error`, ответ кандидата не сохраняется — его можно отправить снова.
           content:
             text/event-stream:
               schema: { type: string }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: |
+            Собеседование завершено, вопросы закончились или ещё выполняется предыдущее действие
+            (ответ интервьюера или подведение итогов). Причина — в `detail`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorDetail' }
+        '422': { description: Пустой или слишком длинный ответ }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/Unavailable' }
 
   /interviews/{id}/finish:
     post:
@@ -57,10 +70,19 @@ paths:
         - $ref: '#/components/parameters/InterviewId'
       responses:
         '200':
-          description: OK
+          description: OK. Для уже завершённого собеседования — сохранённый результат.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Evaluation' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409':
+          description: Нет ни одного ответа на вопросы или ещё идёт ответ интервьюера. Причина — в `detail`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorDetail' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/Unavailable' }
 
   /health:
     get:
@@ -85,12 +107,37 @@ components:
       required: true
       schema: { type: string, format: uuid }
 
+  responses:
+    Unauthorized:
+      description: Нет или неверный токен
+    NotFound:
+      description: Собеседование не найдено
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorDetail' }
+    BadGateway:
+      description: Сбой модели или связанного сервиса
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorDetail' }
+    Unavailable:
+      description: Модель или связанный сервис временно недоступны
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorDetail' }
+
   schemas:
+    ErrorDetail:
+      type: object
+      required: [detail]
+      properties:
+        detail: { type: string }
+
     SendMessageRequest:
       type: object
       required: [text]
       properties:
-        text: { type: string }
+        text: { type: string, minLength: 1, maxLength: 4000 }
 
     Message:
       type: object

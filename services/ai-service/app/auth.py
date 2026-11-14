@@ -7,6 +7,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt.exceptions import PyJWKClientConnectionError, PyJWKSetError, PyJWTError
 
+from app.clients.core_api import SERVICE_UNAVAILABLE
 from app.config import settings
 
 _jwks_client = jwt.PyJWKClient(settings.jwks_url, timeout=5)
@@ -16,7 +17,7 @@ _bearer = HTTPBearer()
 def _unauthorized() -> HTTPException:
     return HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid or expired token",
+        detail="Сессия истекла — войдите заново",
         headers={"WWW-Authenticate": "Bearer"},
     )
 
@@ -36,7 +37,7 @@ def current_user_id(
     except (PyJWKClientConnectionError, PyJWKSetError, json.JSONDecodeError) as e:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Service temporarily unavailable",
+            detail=SERVICE_UNAVAILABLE,
         ) from e
     except PyJWTError as e:
         raise _unauthorized() from e

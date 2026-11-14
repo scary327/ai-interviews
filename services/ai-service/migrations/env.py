@@ -19,7 +19,7 @@ target_metadata = Base.metadata
 
 def include_name(name: str | None, type_: str, parent_names: dict) -> bool:
     if type_ == "schema":
-        return name in (None, SCHEMA)
+        return name == SCHEMA
     if type_ == "table":
         return name != "alembic_version"
     return True
@@ -48,7 +48,11 @@ def do_run_migrations(connection: Connection) -> None:
 
 
 async def run_async_migrations() -> None:
-    connectable = create_async_engine(settings.db_url, poolclass=pool.NullPool)
+    connectable = create_async_engine(
+        settings.db_url,
+        poolclass=pool.NullPool,
+        connect_args={"server_settings": {"search_path": "pg_catalog"}},
+    )
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
     await connectable.dispose()

@@ -39,11 +39,20 @@ export const createSseParser = (onEvent: (event: SseEvent) => void) => {
 export class HttpError extends Error {
     readonly status: number;
 
-    constructor(status: number) {
-        super(`HTTP ${status}`);
+    constructor(status: number, detail?: string) {
+        super(detail ?? `HTTP ${status}`);
         this.status = status;
     }
 }
+
+const readDetail = async (response: Response) => {
+    try {
+        const body = (await response.json()) as { detail?: unknown };
+        return typeof body.detail === "string" ? body.detail : undefined;
+    } catch {
+        return undefined;
+    }
+};
 
 interface PostSseOptions {
     signal?: AbortSignal;
@@ -73,7 +82,9 @@ export const postSse = async (url: string, body: unknown, options: PostSseOption
     if (response.status === 401 && (await refreshSession())) {
         response = await send();
     }
-    if (!response.ok || !response.body) throw new HttpError(response.status);
+    if (!response.ok || !response.body) {
+        throw new HttpError(response.status, await readDetail(response));
+    }
 
     const parse = createSseParser(options.onEvent);
     const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
