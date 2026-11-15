@@ -10,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -52,6 +53,9 @@ public class Interview {
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
 
+	@OneToOne(mappedBy = "interview", fetch = FetchType.LAZY)
+	private InterviewResult result;
+
 	protected Interview() {
 	}
 
@@ -92,6 +96,14 @@ public class Interview {
 
 	public Instant getCreatedAt() {
 		return createdAt;
+	}
+
+	public InterviewResult getResult() {
+		return result;
+	}
+
+	public void setResult(InterviewResult result) {
+		this.result = result;
 	}
 
 }

@@ -40,6 +40,7 @@ services:
       LLM_PROVIDER: ${LLM_PROVIDER}
       ROUTERAI_API_KEY: ${ROUTERAI_API_KEY}
       ROUTERAI_MODEL: ${ROUTERAI_MODEL}
+      ROUTERAI_BASE_URL: ${ROUTERAI_BASE_URL:-}
       CORE_API_URL: http://core-api:8080
       JWKS_URL: http://core-api:8080/api/.well-known/jwks.json
       INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN}

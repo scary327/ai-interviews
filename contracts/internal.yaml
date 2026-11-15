@@ -16,24 +16,43 @@ paths:
     get:
       operationId: internalGetInterview
       tags: [internal]
-      summary: (ai-service → core-api) Параметры собеседования для построения промпта
+      summary: (ai-service → core-api) Параметры собеседования и его владелец
+      description: ai-service сверяет userId с sub из JWT пользователя.
       parameters:
-        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - $ref: '#/components/parameters/InterviewId'
       responses:
         '200':
           description: OK
           content:
             application/json:
-              schema:
-                $ref: './core-api.yaml#/components/schemas/Interview'
+              schema: { $ref: '#/components/schemas/InternalInterview' }
+        '401': { description: Нет или неверный X-Internal-Token }
+        '404': { description: Собеседование не найдено }
+
+  /interviews/{id}/start:
+    post:
+      operationId: internalStartInterview
+      tags: [internal]
+      summary: (ai-service → core-api) Отметить, что диалог начался
+      description: CREATED → IN_PROGRESS. Для IN_PROGRESS ничего не меняет.
+      parameters:
+        - $ref: '#/components/parameters/InterviewId'
+      responses:
+        '204': { description: OK }
+        '401': { description: Нет или неверный X-Internal-Token }
+        '404': { description: Собеседование не найдено }
+        '409': { description: Собеседование уже завершено }
 
   /interviews/{id}/result:
     put:
       operationId: internalSaveResult
       tags: [internal]
       summary: (ai-service → core-api) Сохранить итоговую оценку
+      description: |
+        IN_PROGRESS → FINISHED. Повторный вызов для FINISHED перезаписывает результат.
+        Для CREATED (диалог не начинался) — 409.
       parameters:
-        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - $ref: '#/components/parameters/InterviewId'
       requestBody:
         required: true
         content:
@@ -42,6 +61,10 @@ paths:
               $ref: './core-api.yaml#/components/schemas/InterviewResult'
       responses:
         '204': { description: OK }
+        '400': { description: Невалидный результат (набор критериев, score ≠ среднему и т.п.) }
+        '401': { description: Нет или неверный X-Internal-Token }
+        '404': { description: Собеседование не найдено }
+        '409': { description: Диалог не начинался (статус CREATED) }
 
 components:
   securitySchemes:
@@ -49,3 +72,19 @@ components:
       type: apiKey
       in: header
       name: X-Internal-Token
+
+  parameters:
+    InterviewId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  schemas:
+    InternalInterview:
+      allOf:
+        - $ref: './core-api.yaml#/components/schemas/Interview'
+        - type: object
+          required: [userId]
+          properties:
+            userId: { type: string, format: uuid }

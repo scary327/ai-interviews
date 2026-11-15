@@ -54,7 +54,7 @@ export const InterviewChat = ({ interviewId }: { interviewId: string }) => {
                 <ChatComposer
                     interviewId={interviewId}
                     disabled={chat.isStreaming || chat.isLoading}
-                    onSend={(text) => void chat.send(text)}
+                    onSend={chat.send}
                 />
             </div>
         </div>

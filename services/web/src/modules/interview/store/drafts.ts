@@ -12,9 +12,10 @@ export const useDraft = (interviewId: string) => {
     const [drafts, setDrafts] = useAtom(draftsAtom);
 
     const setDraft = useCallback(
-        (text: string) =>
+        (next: string | ((current: string) => string)) =>
             setDrafts((prev) => {
-                const { [interviewId]: _, ...rest } = prev;
+                const { [interviewId]: current = "", ...rest } = prev;
+                const text = typeof next === "function" ? next(current) : next;
                 return text ? { ...rest, [interviewId]: text } : rest;
             }),
         [interviewId, setDrafts]

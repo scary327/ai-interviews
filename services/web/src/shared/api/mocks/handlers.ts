@@ -3,8 +3,11 @@ import { delay, http, HttpResponse } from "msw";
 
 import { getFinishInterviewResponseMock } from "../generated/ai/endpoints.msw";
 import { getLoginResponseMock } from "../generated/core/endpoints.msw";
+import { EvaluationCriterionKey } from "../generated/ai/model";
 import type { CreateInterviewRequest, Interview, SendMessageRequest } from "../index";
 import { createMessage, db, MOCK_QUESTIONS } from "./db";
+
+const CRITERION_KEYS = Object.values(EvaluationCriterionKey);
 
 /**
  * Моки бэкендов для разработки без запущенных сервисов (VITE_API_MOCKS=true) и для тестов.
@@ -107,11 +110,22 @@ const chatHandlers = [
     http.post("*/ai/interviews/:id/finish", async ({ params }) => {
         await delay(1200);
         const interview = findInterview(String(params.id));
-        const evaluation = getFinishInterviewResponseMock({
+        const criteria = CRITERION_KEYS.map((key) => ({
+            key,
             score: faker.number.int({ min: 40, max: 95 }),
+            comment: "Комментарий интервьюера по критерию."
+        }));
+        const evaluation = getFinishInterviewResponseMock({
+            score: Math.round(criteria.reduce((sum, c) => sum + c.score, 0) / criteria.length),
             summary: "Уверенный уровень, но стоит подтянуть работу с транзакциями.",
             strengths: ["Структурированные ответы", "Знание коллекций"],
-            weaknesses: ["Транзакции в Spring", "Оптимизация SQL"]
+            weaknesses: ["Транзакции в Spring", "Оптимизация SQL"],
+            criteria,
+            recommendations: [
+                "Разобрать propagation в @Transactional",
+                "Потренировать оптимизацию SQL-запросов",
+                "Готовить примеры из своих проектов"
+            ]
         });
 
         if (interview) {
