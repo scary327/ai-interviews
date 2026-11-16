@@ -56,3 +56,11 @@ make up          # поднимает всё через docker compose
 Если через VPN запросы к модели зависают на TLS-соединении, задайте в `.env`
 `DOCKER_NETWORK_MTU=1280` и пересоздайте сеть: `make down && make up`.
 Обычный `make down` сохраняет данные PostgreSQL.
+
+## Работа с AI-агентами
+
+Начальная инструкция — [AGENTS.md](AGENTS.md), проверенные факты и ограничения —
+[memory/](memory/README.md). В каждом сервисе есть свой `AGENTS.md`.
+Навыки проекта: [диагностика запуска и LLM](.agents/skills/ai-interviews-runtime/SKILL.md)
+и [изменение API между сервисами](.agents/skills/ai-interviews-api/SKILL.md).
+Если инструмент не загружает AGENTS.md автоматически, укажите ему этот файл явно.
