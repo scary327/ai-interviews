@@ -1,65 +1,65 @@
-# Проверенное состояние AI Interviews
+# Verified AI Interviews state
 
-Проверено: 2026-11-16. Это снимок реализации; при расхождении проверяйте указанный код.
+Verified: 2026-11-16. Implementation snapshot; recheck linked code when it changes.
 
-## Общий запуск
+## Full-stack startup
 
-- `make up` из корня использует `infra/docker-compose.yml` и корневой `.env`,
-  собирает три сервиса и запускает PostgreSQL и gateway. Точка входа — HTTP, порт 80.
-  Java и Python доступны через `/api/` и `/ai/`; их порты 8080 и 8000 не опубликованы
-  на хост в стандартном Compose. Vite на 5173 — отдельный режим разработки.
-  Источники: [Makefile](../Makefile), [Compose](../infra/docker-compose.yml),
+- Root `make up` uses `infra/docker-compose.yml` and root `.env`, builds three
+  services and starts PostgreSQL and gateway. Entry point: HTTP port 80.
+  Java/Python are routed via `/api/` and `/ai/`; ports 8080/8000 are not published
+  to the host in standard Compose. Vite on 5173 is a separate development mode.
+  Sources: [Makefile](../Makefile), [Compose](../infra/docker-compose.yml),
   [nginx](../infra/nginx/nginx.conf), [Vite](../services/web/vite.config.ts).
-- Коммит `1d253ba` добавил недостающий Dockerfile `core-api`, `.dockerignore`,
-  настройку MTU и инструкции запуска. Тогда проверены сборка, миграции, HTTP-ответы
-  сервисов и короткий реальный запрос к модели. Это не проверка всего пользовательского сценария.
-- `make jwt-keys` перезаписывает существующий приватный ключ. Не использовать его
-  как безусловный шаг повторного запуска. `.env` и `infra/secrets/` исключены из Git.
-- PostgreSQL хранится в volume `pgdata`; обычный `make down` сохраняет данные.
-  Изменение паролей в `.env` не переинициализирует пользователей уже созданной БД:
-  [init.sh](../infra/postgres/init.sh) выполняется при первичной инициализации.
+- Commit `1d253ba` added the missing core-api Dockerfile, `.dockerignore`, MTU
+  configuration and startup instructions. Build, migrations, service HTTP
+  responses and one short real model request were verified then; this was not
+  a complete user-flow test.
+- `make jwt-keys` overwrites the private key; do not run it unconditionally on
+  restart. `.env` and `infra/secrets/` are ignored by Git.
+- PostgreSQL uses volume `pgdata`; ordinary `make down` preserves data. Changing
+  passwords in `.env` does not update existing DB users:
+  [init.sh](../infra/postgres/init.sh) runs during initial database creation.
 
-## Реальный AI и тестовые ответы
+## Real AI versus test responses
 
-- `LLM_PROVIDER=fake` возвращает «тема 1», «тема 2», шаблонные реплики и оценки.
-  Это не качество реальной модели. `routerai` требует ключ. В Python значение
-  провайдера по умолчанию — `fake`, в `.env.example` — `routerai`.
-  Источники: [настройки](../services/ai-service/app/config.py),
+- `LLM_PROVIDER=fake` produces numbered topics, canned replies and evaluations.
+  This says nothing about real model quality. `routerai` requires a key.
+  Python defaults to `fake`; `.env.example` selects `routerai`.
+  Sources: [settings](../services/ai-service/app/config.py),
   [FakeProvider](../services/ai-service/app/llm/fake.py),
-  [фабрика](../services/ai-service/app/llm/factory.py).
-- После правки `.env` сравнивайте выбранный провайдер с окружением работающего
-  контейнера; `make up` применяет изменения посредством пересоздания. Не выводите
-  полное окружение или `docker compose config` с секретами в чат.
-- План хранится в БД и переиспользуется. Смена провайдера не заменяет вопросы
-  существующего интервью; проверяйте новый диалог, сохраняя старые данные.
-  Источник: [engine.py](../services/ai-service/app/services/engine.py).
-- У фронта есть независимые MSW-моки (`VITE_API_MOCKS`), отдельно от Python `fake`.
-  Успех сценария с моками не доказывает совместимость с backend.
-  Источники: [env.ts](../services/web/src/shared/config/env.ts),
-  [README web](../services/web/README.md).
+  [factory](../services/ai-service/app/llm/factory.py).
+- After editing `.env`, compare provider selection with the running container.
+  `make up` applies changes by recreation. Do not print complete environment
+  or expanded `docker compose config` containing secrets.
+- Interview plans persist and are reused. Switching provider does not replace
+  an existing interview's questions. Test a new interview; preserve old data.
+  Source: [engine.py](../services/ai-service/app/services/engine.py).
+- Frontend MSW mocks (`VITE_API_MOCKS`) are separate from Python `fake`.
+  A successful mocked flow does not prove backend compatibility.
+  Sources: [env.ts](../services/web/src/shared/config/env.ts),
+  [web README](../services/web/README.md).
 
-## Тайм-ауты через VPN
+## VPN timeouts
 
-На одной локальной установке TLS из Docker зависал: MTU Docker 1500 превышал MTU
-VPN 1376. Проверка в сети с MTU 1280 и последующий запрос к модели прошли успешно.
-Исправление: локальное `DOCKER_NETWORK_MTU=1280`; общее значение по умолчанию остаётся
-1500. Для применения изменения сети — `make down` и `make up` без удаления volume.
-Не применять этот диагноз ко всем ошибкам 503: сначала сопоставляйте логи, доступ
-с хоста и из контейнера. Источники: [Compose](../infra/docker-compose.yml),
-[обработка ошибок RouterAI](../services/ai-service/app/llm/routerai.py).
+One local installation stalled during TLS from Docker: Docker MTU 1500 exceeded
+VPN MTU 1376. A network test at MTU 1280 and a subsequent real model request
+succeeded. Local workaround: `DOCKER_NETWORK_MTU=1280`; shared default stays
+1500. Apply with `make down` then `make up`, preserving the volume.
+Do not assume every 503 has this cause: compare logs and host/container access.
+Sources: [Compose](../infra/docker-compose.yml),
+[RouterAI errors](../services/ai-service/app/llm/routerai.py).
 
-## Известные ограничения реализации
+## Known implementation gaps
 
-- Контракт и документация описывают refresh/logout, фронт вызывает
-  `/api/auth/refresh`, но в текущем Java-коде реализованы только auth register/login.
-  Следствие: восстановление сессии после перезагрузки страницы не следует считать
-  рабочим. Это обнаруженное расхождение, а не исправленная функция.
-  Источники: [контракт](../contracts/core-api.yaml),
+- Contract/docs describe refresh/logout, and frontend calls `/api/auth/refresh`,
+  but Java currently implements only auth register/login. Session restoration
+  after page reload must not be assumed functional. This gap is not fixed.
+  Sources: [contract](../contracts/core-api.yaml),
   [AuthController](../services/core-api/src/main/java/tech/aiinterviews/core/auth/AuthController.java),
   [session.ts](../services/web/src/shared/api/session.ts).
-- Во фронте есть Vitest-тесты; команды — в [package.json](../services/web/package.json).
-  На дату проверки в `core-api` нет `src/test`, в `ai-service` нет каталога тестов и
-  настроенного pytest в [pyproject.toml](../services/ai-service/pyproject.toml).
-  Успешный Maven `package` не означает, что поведение backend покрыто тестами.
-- [Архитектура](../docs/architecture.md) и [ADR](../docs/adr/) содержат целевые решения.
-  Подтверждайте наличие эндпоинтов и функциональности по реализации и проверкам.
+- Frontend has Vitest tests; see [package.json](../services/web/package.json).
+  At verification, core-api had no `src/test`; ai-service had no test directory
+  or pytest configuration in [pyproject.toml](../services/ai-service/pyproject.toml).
+  Successful Maven `package` does not imply backend behavioral test coverage.
+- [Architecture](../docs/architecture.md) and [ADRs](../docs/adr/) include intended
+  capabilities. Confirm endpoint availability in implementation and runtime checks.

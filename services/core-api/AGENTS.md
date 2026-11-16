@@ -1,17 +1,31 @@
-# Правила core-api
+# core-api rules
 
-- Java 21, Spring Boot, Maven Wrapper. Пакеты организованы по фичам (`auth`, `user`, `interview`, `internal`); внутри — Controller → Service → Repository, отдельные DTO и entity.
-- Этот сервис единственный выдаёт JWT RS256. Публичный ключ публикуется на `/api/.well-known/jwks.json`; AI получает JWKS, а не приватный ключ.
-- Публичные контроллеры используют `/api/...`, межсервисные — `/internal/...`. Не добавлять общий context-path: nginx сохраняет `/api`, а `/internal` наружу закрыт.
-- Для `/internal` используется `X-Internal-Token`; не подменять проверкой пользовательского JWT. Изменяя доступ, проверить обе SecurityFilterChain и принадлежность интервью пользователю.
-- Сервис владеет только схемой `core`. Данные AI получать по согласованным API, не через таблицы схемы `ai`. Изменения БД оформлять новыми Flyway-миграциями в `src/main/resources/db/migration/`; применённые миграции не переписывать.
-- Контракты: `../../contracts/core-api.yaml` и `../../contracts/internal.yaml`. Изменения публичного API требуют согласования DTO, OpenAPI и генерации web-клиента (`make api-gen` из корня).
-- Перед запуском нужны DB_URL/DB_USER/DB_PASSWORD, существующий приватный JWT-ключ и INTERNAL_API_TOKEN. `make jwt-keys` перезаписывает ключ: не запускать повторно для исправления несвязанной ошибки.
+- Java 21, Spring Boot, Maven Wrapper. Organize by feature (`auth`, `user`,
+  `interview`, `internal`), then Controller → Service → Repository; separate DTOs
+  from entities.
+- Only this service issues RS256 JWTs. Publish public keys at
+  `/api/.well-known/jwks.json`; AI receives JWKS, never the private key.
+- Public controllers use `/api/...`; service endpoints use `/internal/...`.
+  Do not add a global context-path: nginx preserves `/api` and blocks `/internal`.
+- `/internal` uses `X-Internal-Token`, not user JWT authentication. For access
+  changes, check both SecurityFilterChains and interview ownership.
+- Own schema `core` only. Use agreed APIs for AI data, not schema `ai` tables.
+  Add new Flyway migrations under `src/main/resources/db/migration/`;
+  never rewrite applied migrations.
+- Contracts: `../../contracts/core-api.yaml`, `../../contracts/internal.yaml`.
+  Public API changes require aligned DTOs, OpenAPI and web client regeneration
+  (`make api-gen` from root).
+- Startup requires DB_URL/DB_USER/DB_PASSWORD, an existing JWT private key and
+  INTERNAL_API_TOKEN. `make jwt-keys` overwrites keys; do not rerun for unrelated errors.
 
-## Проверка изменений
+## Verification
 
-Из этой папки с JDK 21: `sh mvnw -B verify`. Dockerfile использует wrapper и `package`; из корня сборка сервиса: `docker compose -f infra/docker-compose.yml --env-file .env build core-api`.
+From this directory with JDK 21: `sh mvnw -B verify`. Dockerfile runs wrapper
+`package`; from root: `docker compose -f infra/docker-compose.yml --env-file .env build core-api`.
 
-На 2026-11-16 `src/test` отсутствует: успешная Maven-сборка не означает, что выполнены тесты. Для изменений бизнес-логики добавлять целевой регрессионный тест; после изменения запуска проверять логи миграций и HTTP-ответ JWKS через gateway.
+As of 2026-11-16, `src/test` is absent: successful builds do not imply tests ran.
+Add targeted regression tests for business logic changes. For startup changes,
+check migration logs and the JWKS HTTP response through gateway.
 
-README описывает целевую структуру. В текущем AuthController есть register/login; refresh пока не реализован, хотя фронт его вызывает. Проверять код перед утверждениями о поддержке сессий.
+README includes intended structure. Current AuthController has register/login;
+refresh is not implemented despite frontend usage. Verify before claiming session support.

@@ -1,71 +1,70 @@
-# AI Interviews — инструкции для агентов
+# AI Interviews — agent instructions
 
-## Начало работы
+## Start here
 
-Прочитай `memory/README.md` и `memory/project-state.md`, затем README и AGENTS.md
-затронутого сервиса. Память — проверенный контекст с датой, не гарантия текущего
-состояния: сверяй реализацию, конфигурацию и `git status` перед изменениями.
-`docs/architecture.md` и ADR описывают архитектуру; часть возможностей ещё целевая.
-Не выдавай наличие эндпоинта в контракте или моках за реализацию бэкенда.
+Read `memory/README.md`, `memory/project-state.md`, then the affected service's
+README and AGENTS.md. Memory is dated context, not live state: verify code,
+configuration and `git status` before editing. Architecture docs and ADRs include
+planned features. A contract or mock does not prove backend implementation.
 
-## Карта и границы
+## Ownership and boundaries
 
-- `services/core-api`: Java 21, Spring Boot, Maven Wrapper; пользователи, JWT,
-  жизненный цикл интервью и итоговые результаты; схема БД `core`.
-- `services/ai-service`: Python 3.12, FastAPI, uv; диалог, LLM и оценки; схема `ai`.
-- `services/web`: React, TypeScript, Vite; слои `app → pages → modules → shared`.
-- `contracts/*.yaml`: контракты API. Меняй контракт, реализацию и потребителей
-  согласованно. `make api-gen` обновляет коммитируемый клиент фронтенда.
-- `infra/`: Compose, nginx, инициализация PostgreSQL; `ml/` отделён от рантайма.
+- `services/core-api`: Java 21, Spring Boot, Maven Wrapper; users, JWT, interview
+  lifecycle and final results; owns DB schema `core`.
+- `services/ai-service`: Python 3.12, FastAPI, uv; dialogue, LLM, evaluations;
+  owns schema `ai`.
+- `services/web`: React, TypeScript, Vite; layers `app → pages → modules → shared`.
+- `contracts/*.yaml`: API contracts. Update contracts, implementation and consumers
+  together. `make api-gen` updates the committed frontend client.
+- `infra/`: Compose, nginx, PostgreSQL initialization. `ml/` stays outside runtime.
 
-Только core-api выдаёт JWT RS256; AI проверяет JWKS. Межсервисные обращения идут
-через `/internal/*` с `INTERNAL_API_TOKEN`, а не через чужую схему БД.
-Gateway сохраняет `/api/`, срезает `/ai/`, закрывает `/internal/`.
+Only core-api issues RS256 JWTs; AI verifies JWKS. Cross-service access uses
+`/internal/*` with `INTERNAL_API_TOKEN`, never another service's DB schema.
+Gateway preserves `/api/`, strips `/ai/`, blocks `/internal/`.
 
-## Запуск и проверка
+## Run and verify
 
-Из корня: `make up`, `make ps`, `make logs`, `make down`.
-Полная форма: `docker compose -f infra/docker-compose.yml --env-file .env …`.
-Обычный `docker compose up` из корня не находит файл.
-Общий вход — `http://localhost:80`; dev-фронт отдельно — порт 5173.
-Порты бэкендов 8080/8000 в Compose внутренние, на хост не опубликованы.
+From root: `make up`, `make ps`, `make logs`, `make down`.
+Full command: `docker compose -f infra/docker-compose.yml --env-file .env …`.
+Plain `docker compose up` cannot find the nested file from root.
+Gateway: `http://localhost:80`; standalone Vite: 5173. Backend ports 8080/8000
+are internal, not published to the host by standard Compose.
 
-Проверяй по масштабу изменения: команды сервиса — в его AGENTS.md.
-Успешная сборка не доказывает работоспособность всех пользовательских сценариев.
-Для инфраструктуры проверь `config --quiet`, состояние контейнеров и HTTP через
-gateway. Для AI различай mock UI, FakeProvider и настоящий ответ провайдера.
-Не обещай работу реальной модели по одному `/ai/health`.
+Match checks to the change; see service AGENTS.md. A build does not prove all
+user flows. For infrastructure, check `config --quiet`, container state and HTTP
+through gateway. Distinguish UI mocks, FakeProvider and real model responses.
+`/ai/health` alone does not verify the external LLM.
 
-## Конфигурация и данные
+## Configuration and data
 
-- `.env` и `infra/secrets/` локальные, в Git не попадают. Не выводи целиком env,
-  `docker inspect` или развёрнутый Compose: они могут раскрыть ключи.
-- Не перезаписывай пользовательский `.env` шаблоном и не переключай на `fake`
-  ради видимости успеха. Тестовый режим всегда явно обозначай.
-- `make jwt-keys` перезаписывает ключ: сначала проверь существующий файл.
-- Смена `.env` требует пересоздания контейнера (`up -d`), а не `restart`.
-  Изменение MTU требует пересоздания сети; детали в навыке runtime.
-- `make down` сохраняет volume. Не используй `down -v`, очистку БД или удаление
-  планов интервью как обычный способ устранения ошибки.
+- `.env` and `infra/secrets/` are local and ignored. Never dump full environment,
+  `docker inspect` or expanded Compose output: they may expose secrets.
+- Preserve user configuration; do not overwrite `.env` or silently select `fake`
+  to make a check pass. Explicitly disclose test mode.
+- `make jwt-keys` overwrites keys: check for an existing private key first.
+- Env changes require container recreation (`up -d`), not `restart`. MTU changes
+  require network recreation; see the runtime skill.
+- `make down` preserves volumes. Do not use `down -v`, clear databases or delete
+  interview plans as routine troubleshooting.
 
-## Навыки проекта
+## Project skills
 
-При подходящей задаче прочитай соответствующий файл:
+Read the relevant workflow when applicable:
 
-- `.agents/skills/ai-interviews-runtime/SKILL.md`: сборка, запуск, права Docker,
-  fake/RouterAI, сетевые ошибки, проверка исправления.
-- `.agents/skills/ai-interviews-api/SKILL.md`: контракт и согласованные изменения
-  Java/Python/React, генерация клиента, SSE, проверки интеграции.
+- `.agents/skills/ai-interviews-runtime/SKILL.md`: builds, startup, Docker access,
+  fake/RouterAI, network errors and verification.
+- `.agents/skills/ai-interviews-api/SKILL.md`: coordinated Java/Python/React API
+  changes, client generation, SSE and integration checks.
 
-## Память и завершение работы
+## Memory and completion
 
-Обновляй `memory/` при новых подтверждённых ограничениях, архитектурных решениях
-или повторяемых неисправностях. Указывай дату и исходные файлы; удаляй устаревшие
-выводы. Не сохраняй секреты, переписку пользователей или текущее состояние
-контейнеров как постоянный факт. Не дублируй README целиком.
+Update `memory/` for confirmed limitations, decisions or recurring failures.
+Include verification date and source paths; replace stale conclusions. Do not
+store secrets, user conversations or transient container state as durable facts.
+Avoid duplicating whole READMEs.
 
-Перед коммитом проверь diff и состав staged-файлов. Коммитируй в рамках запроса,
-не включай чужие изменения; push — только в рамках разрешённой задачи.
-Если автор Git не настроен, можно явно обозначить авторство агента через
-`git -c user.name=Codex -c user.email=codex@localhost commit …` без изменения
-глобального конфига и без приписывания авторства пользователю.
+Review the diff and staged files before committing. Commit only requested work;
+exclude unrelated changes. Push only within the authorized task. If Git identity
+is unset, explicit agent authorship is available without changing global config:
+`git -c user.name=Codex -c user.email=codex@localhost commit …`.
+Do not attribute agent work to the user without their chosen identity.

@@ -1,17 +1,17 @@
-# Память проекта
+# Project memory
 
-Проверено: 2026-11-16. Эта папка хранит проверенные факты, ограничения и причины
-решений, полезные следующей AI-сессии. Начните с [состояния проекта](project-state.md).
-Правила работы находятся в корневом `AGENTS.md` и инструкциях соответствующего сервиса.
+Verified: 2026-11-16. Store confirmed facts, limitations and decision rationale
+for future AI sessions. Start with [project state](project-state.md).
+Working rules live in root and service AGENTS.md files.
 
-## Как поддерживать
+## Maintenance
 
-- При изменении поведения обновляйте соответствующий факт, дату проверки и ссылку
-  на код или решение. Код и наблюдаемые результаты имеют приоритет над старой памятью.
-- Разделяйте реализованное поведение, целевую архитектуру и предположения.
-  Фиксируйте ограничения проверки: сборка, healthcheck и полноценный сценарий — разные проверки.
-- Храните причины и способы диагностики, а не журнал команд. Удаляйте устаревшие записи.
-- Не записывайте API-ключи, пароли, JWT, приватные ключи, содержимое `.env`, персональные
-  данные и переписки кандидатов. Локальные особенности не превращайте в общий стандарт.
-- Не считайте состояние контейнеров, группы пользователя, доступность модели или баланс
-  аккаунта постоянными фактами: проверяйте их заново при диагностике.
+- Update the fact, verification date and source link when behavior changes.
+  Code and observed results take precedence over old memory.
+- Separate implementation, intended architecture and hypotheses. Distinguish
+  build success, health checks and complete user-flow verification.
+- Keep rationale and diagnostic findings, not command transcripts. Remove stale entries.
+- Never store API keys, passwords, JWTs, private keys, `.env` contents, personal
+  data or candidate conversations. Do not generalize local workarounds.
+- Recheck container state, group membership, model availability and account
+  balance during troubleshooting; these are not permanent project facts.

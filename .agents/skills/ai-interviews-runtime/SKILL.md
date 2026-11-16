@@ -1,63 +1,64 @@
 ---
 name: ai-interviews-runtime
-description: Диагностика и запуск Docker-сборки AI Interviews, включая RouterAI, тестовые ответы, права Docker и VPN. Использовать для проблем запуска или доступности модели именно этого проекта.
+description: Run and troubleshoot AI Interviews Docker builds, RouterAI, test responses, Docker permissions and VPN networking. Use for startup or model availability issues in this project.
 ---
 
-# Запуск и диагностика AI Interviews
+# AI Interviews runtime diagnosis
 
-Работай в корне нужного checkout, прочитай его AGENTS.md и memory/project-state.md.
-Пути ниже относительно корня. Не предполагай фиксированный путь на компьютере.
+Work in the intended checkout root. Read AGENTS.md and memory/project-state.md.
+Paths below are root-relative; do not assume a fixed machine path.
 
-## Сначала установи слой ошибки
+## Identify the failing layer
 
-`git status --short`, `make ps`, Compose `logs --tail 80 <service>` и конфигурация
-с `config --quiet`. Префикс команд: `docker compose -f infra/docker-compose.yml --env-file .env`.
-Просматривай ограниченные логи; не публикуй ключи, токены и тексты интервью.
+Check `git status --short`, `make ps`, Compose `logs --tail 80 <service>` and
+`config --quiet`. Compose prefix:
+`docker compose -f infra/docker-compose.yml --env-file .env`.
+Limit log output; never publish keys, tokens or interview transcripts.
 
-- `command not found`: проверь PATH и среду терминала. Flatpak VS Code может не
-  видеть Docker хоста; `flatpak-spawn --host bash` применим только к такой среде.
-- `permission denied` на socket: сравни `id`, группу `docker` и права socket.
-  Если членство уже добавлено, `newgrp docker` обновляет группу оболочки либо
-  нужен новый сеанс. Не меняй socket на 666 и не добавляй права без необходимости.
-- Отсутствующий `.env`: создай из шаблона только если его нет. JWT-ключ создавай
-  только при отсутствии приватного ключа. Не затри текущую конфигурацию.
-- SSL-ошибка браузера на порту 80: проверь явный `http://127.0.0.1`, не HTTPS.
+- `command not found`: inspect PATH and terminal environment. Flatpak VS Code may
+  not see host Docker; `flatpak-spawn --host bash` applies to that environment only.
+- Socket `permission denied`: compare `id`, docker group and socket permissions.
+  If membership already exists, use `newgrp docker` or a new login session.
+  Do not chmod the socket to 666 or grant unnecessary access.
+- Missing `.env`: copy the example only if absent. Generate JWT keys only when
+  the private key is absent. Preserve existing configuration.
+- Browser SSL error on port 80: try explicit `http://127.0.0.1`, not HTTPS.
 
-## Тестовые вопросы или ошибка модели
+## Canned questions or model errors
 
-Сравни `LLM_PROVIDER` в `.env` и работающем контейнере. Для API-ключа выводи только
-факт наличия. В Python-контейнере используй `/app/.venv/bin/python`.
-`FakeProvider` задаёт «тема 1…5» и шаблонные оценки; это не настоящий LLM.
-Отдельно проверь `VITE_API_MOCKS` во фронтенде. Настройки Vite фиксируются при сборке.
+Compare `LLM_PROVIDER` in `.env` with the running container. Print only API-key
+presence, never its value. Container Python: `/app/.venv/bin/python`.
+`FakeProvider` emits numbered topics and canned scores; it is not a real LLM.
+Check frontend `VITE_API_MOCKS` separately; Vite values are fixed at build time.
 
-После изменения env пересоздай AI-сервис командой `up -d --no-deps ai-service`;
-после изменения кода нужен build. План интервью хранится в БД: для проверки
-нового провайдера создай новое интервью, не удаляй прежние планы.
+After env changes, recreate AI with `up -d --no-deps ai-service`; rebuild for code
+changes. Interview plans persist in DB. Test provider changes with a new interview;
+do not delete existing plans.
 
-Сообщение UI «Модель временно недоступна» объединяет несколько причин.
-Проверь `app/llm/routerai.py` и логи: timeout, connection error, 402 (баланс),
-429, 5xx и прочие статусы требуют разных действий. Не меняй модель или ключ
-наугад. Текущие лимиты клиента: connect 5 секунд, общий timeout 60, retries 0;
-перед изменением сверь код. Порядка 5 секунд до ошибки — повод проверить соединение.
+The UI's temporary-model-unavailability message covers several causes. Inspect
+`app/llm/routerai.py` and logs: timeout, connection errors, 402 (balance), 429 and
+5xx need different responses. Do not change keys/models at random. Current client
+limits: connect 5 seconds, overall timeout 60, retries 0; recheck code before
+changing them. Failure around 5 seconds suggests checking connection establishment.
 
-## TLS и VPN
+## TLS and VPN
 
-Сравни одинаковый GET `https://routerai.ru/api/v1/models` с хоста и контейнера
-без ключа; статус ответа отличает доступность сети от тайм-аута.
-Если хост отвечает, а контейнер зависает на TLS, проверь маршрут и MTU VPN/сети
-Docker. В этом проекте меньший MTU уже решал такую проблему, но это не причина
-всех тайм-аутов. При необходимости проверь гипотезу на временной Docker-сети
-с MTU 1280 и удали только созданные для этой проверки ресурсы.
+Compare the same unauthenticated GET `https://routerai.ru/api/v1/models` from host
+and container; an HTTP response distinguishes reachability from timeout.
+If host succeeds but container TLS stalls, inspect routing and VPN/Docker MTU.
+Lower MTU previously resolved this project's local issue, not all possible timeouts.
+If needed, test a temporary Docker network at MTU 1280 and remove only resources
+created for that check.
 
-Подтверждённое исправление: локальный `DOCKER_NETWORK_MTU=1280` в `.env`, затем
-`make down` и `make up`, без `-v`. Дефолт общего шаблона остаётся 1500.
-Пересоздание сети прерывает активные запросы; учитывай текущий контекст работы.
+Confirmed local workaround: `.env` `DOCKER_NETWORK_MTU=1280`, then `make down`
+and `make up`, without `-v`. Shared default stays 1500. Network recreation
+interrupts requests; account for active work.
 
-## Доказательство результата
+## Verify the result
 
-Проверь состояния контейнеров, `/`, `/api/.well-known/jwks.json`, `/ai/health`
-через HTTP gateway. После старта приложениям нужно время на миграции.
-Для ошибки LLM при разрешённой проверке сделай один короткий запрос к настроенной
-модели; он может расходовать баланс. Не отправляй для проверки чужую переписку.
-Если запрос не прошёл, сообщи фактическую причину, не маскируй её fake-режимом.
-Зафиксируй вывод с датой и источниками в memory/, без секретов и лишнего лога.
+Check container state and HTTP gateway routes `/`, `/api/.well-known/jwks.json`,
+`/ai/health`. Allow startup time for migrations. For LLM failures, when authorized,
+make one short request to the configured model; it may consume account balance.
+Do not send user conversations as test input. Report actual failures rather than
+masking them with fake mode. Record dated findings and sources in memory/,
+without secrets or verbose logs.

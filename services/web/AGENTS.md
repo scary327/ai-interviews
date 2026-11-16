@@ -1,15 +1,29 @@
-# Правила фронтенда
+# Frontend rules
 
-- Архитектура: `app → pages → modules → shared`. Модули не импортируют друг друга; внешний доступ к модулю — через его `index.ts`. Страницы получают параметры и навигацию из `app/routes`. Подробности и проверки границ — `README.md`, `eslint.config.js`.
-- Серверные данные держать в TanStack Query; Jotai — для клиентского состояния. Access-токен хранится в памяти, не переносить его в localStorage ради обхода проблем авторизации.
-- API менять через `../../contracts/*.yaml`, затем `npm run api:gen`. Результат `src/shared/api/generated/` коммитится: Docker-контекст web не включает contracts. Импортировать клиент через `@/shared/api`; не править генерацию вручную.
-- `src/app/routeTree.gen.ts` генерирует TanStack Router. Изменять файлы маршрутов, затем запускать Vite/сборку.
-- SSE здесь идёт через POST + fetch (`src/shared/api/sse.ts`), с событиями `delta`, `done`, `error`. Не заменять на EventSource, теряя POST, авторизацию или отмену запроса.
-- MSW (`VITE_API_MOCKS=true`) и `LLM_PROVIDER=fake` в Python — разные режимы. Успешный сценарий с MSW не подтверждает работоспособность бэкендов. `VITE_*` — параметры сборки; корневой `.env` Compose не настраивает автоматически Vite.
-- Dev-сервер использует порт 5173 и проксирует API на хостовые 8080/8000. В стандартном Compose эти порты бэкендов не опубликованы: приложение целиком открывается через gateway на HTTP 80.
+- Layers: `app → pages → modules → shared`. Modules cannot import each other;
+  external access goes through module `index.ts`. Pages receive route parameters
+  and navigation from `app/routes`. See README.md and eslint.config.js.
+- Server data belongs in TanStack Query; Jotai holds client state. Keep access
+  tokens in memory; do not move them to localStorage to bypass auth failures.
+- Change API through `../../contracts/*.yaml`, then `npm run api:gen`. Commit
+  `src/shared/api/generated/`: web's Docker context excludes contracts.
+  Import via `@/shared/api`; do not edit generated code manually.
+- TanStack Router generates `src/app/routeTree.gen.ts`. Edit route source files,
+  then run Vite/build.
+- SSE uses POST + fetch (`src/shared/api/sse.ts`), with `delta`, `done`, `error`
+  events. Preserve POST, auth and cancellation; EventSource is not a replacement.
+- MSW (`VITE_API_MOCKS=true`) and Python `LLM_PROVIDER=fake` are separate modes.
+  Mocked success does not verify backends. `VITE_*` are build-time values;
+  root Compose `.env` does not automatically configure Vite.
+- Dev server uses 5173 and proxies to host ports 8080/8000. Standard Compose
+  does not publish these ports; access the full stack through HTTP gateway 80.
 
-## Проверка изменений
+## Verification
 
-Из этой папки: `npm ci`, затем по изменению `npm run build`, `npm run lint`, `npm test`. Для конкретного регресса: `npm test -- src/shared/api/sse.test.ts` (или другой затронутый тест). Не считать MSW-тесты проверкой реального API.
+From this directory: `npm ci`, then relevant checks: `npm run build`,
+`npm run lint`, `npm test`. Target a regression with e.g.
+`npm test -- src/shared/api/sse.test.ts`. MSW tests do not verify real APIs.
 
-Фронт вызывает `/api/auth/refresh`, но на 2026-11-16 Java AuthController реализует только register/login. При сбоях восстановления сессии сверять серверную реализацию, а не считать описание refresh в README доказательством готовности.
+As of 2026-11-16, frontend calls `/api/auth/refresh`, but Java AuthController only
+implements register/login. Verify server code when diagnosing session restoration;
+the README's description of refresh does not prove implementation.

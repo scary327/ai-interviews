@@ -1,16 +1,36 @@
-# Правила ai-service
+# ai-service rules
 
-- Python 3.12+, FastAPI, SQLAlchemy async, зависимости управляются `uv` и `uv.lock`. Менять зависимости через uv с обновлением lock; не добавлять тяжёлые ML-зависимости сервинга без задачи.
-- Только `app/llm/` обращается к SDK провайдера. Остальные слои работают с `LLMProvider.complete_json/stream`. Промпты находятся в `app/prompts/`, схемы ответа — `app/schemas/llm.py`.
-- Сервис проверяет JWT RS256 по JWKS core-api и сверяет владельца интервью через internal API. Не выдаёт JWT и не получает приватный ключ. Несовпадение владельца возвращает 404.
-- Владеет только схемой `ai`. Изменения моделей сопровождаются Alembic-миграциями; сохранить фильтрацию схемы в `migrations/env.py`. Пользовательские данные и итог интервью передаются core-api через `app/clients/core_api.py`.
-- Роуты не содержат `/ai`: gateway и Vite срезают этот префикс. SSE — POST с событиями `delta`, `done`, `error`; после начала потока HTTP-статус уже не заменяет событие ошибки.
-- Состояние интервью восстанавливается из плана, сообщений и оценок. Сохранить advisory lock на интервью, откат незавершённого ответа и возможность повторной отправки после сбоя. Повторное завершение возвращает сохранённый результат.
-- Текущий сценарий: 5 вопросов, не более одного уточнения на вопрос; решение о переходе принимает engine. Итог — четыре критерия, среднее округляется half-up. Изменения этих правил согласовывать со схемами/контрактами и тестировать на границах.
-- `fake` выдаёт шаблонные вопросы и оценки, не проверяет реальную модель. Не переключать заполненный RouterAI-конфиг на fake для сокрытия ошибок. План уже начатого интервью сохранён в БД и не меняется при переключении провайдера.
+- Python 3.12+, FastAPI, async SQLAlchemy; dependencies managed with `uv` and
+  `uv.lock`. Update dependencies through uv and commit lock changes. Avoid heavy
+  ML runtime dependencies unless required by the task.
+- Only `app/llm/` calls provider SDKs. Other layers use
+  `LLMProvider.complete_json/stream`. Prompts: `app/prompts/`; response schemas:
+  `app/schemas/llm.py`.
+- Verify RS256 JWT via core-api JWKS and interview ownership via internal API.
+  Never issue JWTs or obtain private keys. Ownership mismatch returns 404.
+- Own schema `ai` only. Model changes require Alembic migrations; preserve schema
+  filtering in `migrations/env.py`. Access user/interview data and submit results
+  via core-api through `app/clients/core_api.py`.
+- Routes omit `/ai`: gateway/Vite strip it. SSE uses POST and `delta`, `done`,
+  `error` events; after streaming starts, an HTTP status cannot replace an error event.
+- Restore state from plans, messages and evaluations. Preserve per-interview
+  advisory locks, incomplete-answer rollback and safe retry after failure.
+  Repeated finish returns the saved result.
+- Current flow: five questions, at most one follow-up per question; engine controls
+  transitions. Final report has four criteria and a half-up rounded average.
+  Coordinate rule changes with schemas/contracts and check boundary behavior.
+- `fake` produces canned questions/evaluations, not real model verification.
+  Do not hide failures by switching configured RouterAI to fake. Existing plans
+  persist across provider changes.
 
-## Проверка изменений
+## Verification
 
-Из этой папки: `uv sync --frozen`, затем `uv run python -m compileall -q app migrations` для синтаксиса. На 2026-11-16 тестовой папки и pytest-зависимости нет; не заявлять о прохождении pytest. Для существенной логики добавлять целевые проверки с подставным LLM, без сетевых расходов.
+From this directory: `uv sync --frozen`, then
+`uv run python -m compileall -q app migrations` for syntax. As of 2026-11-16,
+there is no test directory or pytest dependency; do not claim pytest passed.
+Add targeted checks with a stub LLM for substantial logic changes, without network costs.
 
-`uv run alembic upgrade head` требует настроенного окружения и доступной БД и изменяет её. Для проверки запуска через Compose смотреть миграции и `GET http://localhost/ai/health`; health не проверяет внешний LLM. Реальный запрос к модели проверять отдельно, если это входит в задачу, без печати ключей или полных пользовательских диалогов.
+`uv run alembic upgrade head` requires configured environment/database and mutates
+the DB. For Compose startup, check migrations and `GET http://localhost/ai/health`;
+health does not verify the external LLM. Test a real model request separately when
+within scope, without printing keys or full user conversations.

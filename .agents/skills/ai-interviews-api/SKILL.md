@@ -1,38 +1,36 @@
 ---
 name: ai-interviews-api
-description: Согласованное изменение API в AI Interviews через OpenAPI, Spring Boot, FastAPI и React. Использовать при добавлении эндпоинтов, изменении DTO, авторизации или событий SSE в этом проекте.
+description: Coordinate AI Interviews API changes across OpenAPI, Spring Boot, FastAPI and React. Use for endpoints, DTOs, authentication or SSE protocol changes in this project.
 ---
 
-# Изменение API AI Interviews
+# AI Interviews API changes
 
-Начни с AGENTS.md корня, правил затронутых сервисов и memory/project-state.md.
-Ниже пути от корня проекта; не привязывай работу к одному checkout.
+Read root AGENTS.md, affected service rules and memory/project-state.md.
+Paths below are relative to project root, not a fixed checkout.
 
-1. Найди операцию в `contracts/core-api.yaml`, `contracts/ai-service.yaml` или
-   `contracts/internal.yaml`, соответствующий controller/router и потребителя.
-   Сверь действительную реализацию: наличие refresh/logout в контракте и моках
-   не доказывает существование этих эндпоинтов в Java.
-2. Сохраняй владельца данных: JWT, пользователи и статус/результат интервью —
-   core-api; диалог, план и оценки ответов — ai-service. Обмен между схемами
-   только через internal API. Проверку владельца интервью не заменяй знанием ID.
-3. Меняй контракт с устойчивым `operationId`, DTO/валидацию, обработчики ошибок
-   и вызовы согласованно. Сверяй префиксы: gateway сохраняет `/api/`, срезает
-   `/ai/`; `/internal/` снаружи недоступен. Не добавляй общий context-path Java.
-4. При изменении БД добавь следующую миграцию Flyway/Alembic. Не переписывай
-   применённые миграции и не очищай volume ради прохождения проверки.
-5. Из корня выполни `make api-gen` при изменении публичных контрактов. Orval
-   находится в `services/web/orval.config.ts`; коммитируй результат генерации.
-   Не правь generated-файлы вручную. `internal.yaml` не генерируется для браузера.
-   Обнови ручные MSW handlers и экспорт `shared/api`, если операция того требует.
-6. Для POST SSE проверь ручной fetch-парсер `services/web/src/shared/api/sse.ts`
-   и поток Python `app/services/engine.py`: события delta/done/error, отмену,
-   ошибки до начала стрима и после него. Обычный JSON-хук или EventSource
-   не заменяет этот протокол. Сохраняй advisory lock и очистку незавершённого хода.
-7. Запусти соответствующие проверки из AGENTS.md сервисов. Для изменений
-   интеграции проверь затронутую цепочку через gateway: права владельца,
-   ожидаемые ошибки, сохранение/повтор запроса. Моки доказывают поведение UI,
-   а не готовность бэкенда. Не называй Maven-сборку тестами, если тестов нет.
+1. Locate the operation in `contracts/core-api.yaml`, `contracts/ai-service.yaml`
+   or `contracts/internal.yaml`, its controller/router and consumer. Verify actual
+   implementation: refresh/logout in contracts or mocks does not prove Java support.
+2. Preserve ownership: core-api owns JWT, users and interview status/results;
+   ai-service owns dialogue, plans and answer evaluations. Cross-schema access
+   goes through internal API. Knowing an interview ID does not prove ownership.
+3. Coordinate contracts, stable `operationId`, DTO validation, error handling and
+   callers. Gateway preserves `/api/`, strips `/ai/`, blocks external `/internal/`.
+   Do not add a global Java context-path.
+4. Add the next Flyway/Alembic migration for DB changes. Never rewrite applied
+   migrations or clear volumes to make checks pass.
+5. Run root `make api-gen` for public contract changes. Orval config lives in
+   `services/web/orval.config.ts`; commit generated output, never hand-edit it.
+   `internal.yaml` is not generated for browsers. Update manual MSW handlers and
+   `shared/api` exports where needed.
+6. For POST SSE, check the fetch parser `services/web/src/shared/api/sse.ts` and
+   Python `app/services/engine.py`: delta/done/error events, cancellation, errors
+   before and after streaming starts. JSON hooks or EventSource do not replace
+   this protocol. Preserve advisory locks and incomplete-turn cleanup.
+7. Run relevant service checks. For integration changes, verify the affected path
+   through gateway: ownership, expected errors, persistence and retries. Mocks
+   verify UI behavior, not backend readiness. Do not report a Maven build as tests
+   when no tests exist.
 
-При новом несовпадении контракта и реализации запиши проверяемый факт с путями
-в memory/project-state.md. Не расширяй исправление автоматически на все
-исторические несовпадения, не относящиеся к запросу.
+Record newly confirmed contract/implementation gaps with source paths in
+memory/project-state.md. Do not automatically expand the task to unrelated gaps.
