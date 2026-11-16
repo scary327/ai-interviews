@@ -1,5 +1,4 @@
 # Поднимает весь проект: make up
-# Dockerfile'ы появятся в сервисах при их инициализации.
 
 name: ai-interviews
 
@@ -74,3 +73,8 @@ secrets:
 
 volumes:
   pgdata:
+
+networks:
+  default:
+    driver_opts:
+      com.docker.network.driver.mtu: ${DOCKER_NETWORK_MTU:-1500}
