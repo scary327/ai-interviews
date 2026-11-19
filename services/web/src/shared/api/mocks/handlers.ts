@@ -52,7 +52,9 @@ const interviewHandlers = [
     }),
     http.post("*/api/interviews", async ({ request }) => {
         await delay();
-        const body = (await request.json()) as CreateInterviewRequest;
+        // Бэкенд не отдаёт тексты в Interview
+        const { resumeText, vacancyText, ...body } =
+            (await request.json()) as CreateInterviewRequest;
         const interview: Interview = {
             id: faker.string.uuid(),
             ...body,
@@ -136,4 +138,13 @@ const chatHandlers = [
     })
 ];
 
-export const handlers = [...authHandlers, ...interviewHandlers, ...chatHandlers];
+const resumeHandlers = [
+    http.post("*/api/resumes/extract", async () => {
+        await delay();
+        return HttpResponse.json({
+            text: "[имя] [имя]\nJava Backend Developer\nEmail: [email]  Телефон: [телефон]\n\nОпыт: Spring Boot, PostgreSQL, Kafka — 3 года"
+        });
+    })
+];
+
+export const handlers = [...authHandlers, ...interviewHandlers, ...resumeHandlers, ...chatHandlers];

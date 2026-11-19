@@ -11,4 +11,14 @@ export interface CreateInterviewRequest {
   position: string;
   level: InterviewLevel;
   topics?: string[];
+  /**
+     * Текст резюме; обезличивается при сохранении
+     * @maxLength 20000
+     */
+  resumeText?: string;
+  /**
+     * Текст вакансии; обезличивается при сохранении
+     * @maxLength 10000
+     */
+  vacancyText?: string;
 }

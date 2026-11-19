@@ -26,9 +26,11 @@ import type {
 
 import type {
   CreateInterviewRequest,
+  ExtractResumeTextBody,
   Interview,
   LoginRequest,
   RegisterRequest,
+  ResumeText,
   TokenResponse,
   User
 } from './model';
@@ -667,6 +669,76 @@ export const useCreateInterview = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getCreateInterviewMutationOptions(options), queryClient);
+    }
+
+/**
+ * @summary Извлечь обезличенный текст резюме из файла (PDF, DOCX, TXT до 5 МБ); файл не сохраняется
+ */
+export const extractResumeText = (
+    extractResumeTextBody: BodyType<ExtractResumeTextBody>,
+ signal?: AbortSignal
+) => {
+
+      const formData = new FormData();
+formData.append(`file`, extractResumeTextBody.file);
+
+      return coreHttp<ResumeText>(
+      {url: `/resumes/extract`, method: 'POST',
+      headers: {'Content-Type': 'multipart/form-data', },
+       data: formData, signal
+    },
+      );
+    }
+
+
+
+
+export const getExtractResumeTextMutationKey = () => ['extractResumeText'] as const;
+
+export const getExtractResumeTextMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof extractResumeText>>, TError,ExtractResumeTextMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof extractResumeText>>, TError,ExtractResumeTextMutationVariables, TContext> => {
+
+const mutationKey = getExtractResumeTextMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof extractResumeText>>, ExtractResumeTextMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  extractResumeText(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ExtractResumeTextMutationResult = NonNullable<Awaited<ReturnType<typeof extractResumeText>>>
+    export type ExtractResumeTextMutationBody = BodyType<ExtractResumeTextBody>
+    export type ExtractResumeTextMutationError = ErrorType<void>
+    export type ExtractResumeTextMutationVariables = {data: BodyType<ExtractResumeTextBody>}
+
+    /**
+ * @summary Извлечь обезличенный текст резюме из файла (PDF, DOCX, TXT до 5 МБ); файл не сохраняется
+ */
+export const useExtractResumeText = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof extractResumeText>>, TError,ExtractResumeTextMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof extractResumeText>>,
+        TError,
+        ExtractResumeTextMutationVariables,
+        TContext
+      > => {
+      return useMutation(getExtractResumeTextMutationOptions(options), queryClient);
     }
 
 /**

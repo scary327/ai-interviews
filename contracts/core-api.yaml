@@ -138,8 +138,8 @@ paths:
         '400': { description: Нет файла в запросе }
         '401': { description: Нет или просрочен токен }
         '413': { description: Файл больше 5 МБ }
-        '415': { description: Не PDF, DOCX или TXT, или запрос не multipart/form-data }
-        '422': { description: В файле нет текста, он защищён паролем, повреждён или текст длиннее 100 000 символов }
+        '415': { description: 'Не PDF, DOCX или TXT, или запрос не multipart/form-data' }
+        '422': { description: 'В файле нет текста, он защищён паролем, повреждён или текст длиннее 100 000 символов' }
 
   /interviews/{id}:
     get:

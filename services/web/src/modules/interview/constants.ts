@@ -13,6 +13,11 @@ export const STATUS_LABELS: Record<InterviewStatus, string> = {
     FINISHED: "Завершено"
 };
 
+/** Как в контракте core-api */
+export const RESUME_MAX_LENGTH = 20_000;
+export const VACANCY_MAX_LENGTH = 10_000;
+export const RESUME_FILE_MAX_BYTES = 5 * 1024 * 1024;
+
 export const POSITION_PRESETS = [
     "Java Backend Developer",
     "Python Backend Developer",

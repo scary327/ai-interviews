@@ -1,8 +1,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQueryClient } from "@tanstack/react-query";
+import { useIsMutating, useQueryClient } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
 
 import {
+    getExtractResumeTextMutationKey,
     getListInterviewsQueryKey,
     type Interview,
     InterviewLevel,
@@ -15,10 +16,12 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/s
 import { Input } from "@/shared/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select";
 import { Spinner } from "@/shared/ui/spinner";
+import { Textarea } from "@/shared/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/shared/ui/toggle-group";
 
-import { LEVEL_LABELS, POSITION_PRESETS } from "../constants";
+import { LEVEL_LABELS, POSITION_PRESETS, VACANCY_MAX_LENGTH } from "../constants";
 import { interviewSetupSchema, type InterviewSetupValues, parseTopics } from "../model/schemas";
+import { ResumeField } from "./ResumeField";
 
 interface InterviewSetupFormProps {
     defaultValues?: Partial<InterviewSetupValues>;
@@ -42,13 +45,18 @@ export const InterviewSetupForm = ({ defaultValues, onCreated }: InterviewSetupF
             position: POSITION_PRESETS[0],
             level: "junior",
             topics: "",
+            resumeText: "",
+            vacancyText: "",
             ...defaultValues
         }
     });
     const { errors } = form.formState;
 
-    const onSubmit = form.handleSubmit(({ position, level, topics }) =>
-        create.mutate({ data: { position, level, topics: parseTopics(topics) } })
+    // Иначе собеседование создастся без резюме
+    const extractingResume = useIsMutating({ mutationKey: getExtractResumeTextMutationKey() }) > 0;
+
+    const onSubmit = form.handleSubmit(({ topics, ...values }) =>
+        create.mutate({ data: { ...values, topics: parseTopics(topics) } })
     );
 
     return (
@@ -118,7 +126,43 @@ export const InterviewSetupForm = ({ defaultValues, onCreated }: InterviewSetupF
                     </FieldDescription>
                 </Field>
 
-                <Button type="submit" disabled={create.isPending}>
+                <Controller
+                    control={form.control}
+                    name="vacancyText"
+                    render={({ field }) => (
+                        <Field data-invalid={!!errors.vacancyText}>
+                            <FieldLabel htmlFor="vacancyText">Вакансия</FieldLabel>
+                            <Textarea
+                                id="vacancyText"
+                                placeholder="Вставьте текст вакансии"
+                                className="max-h-64"
+                                rows={3}
+                                aria-invalid={!!errors.vacancyText}
+                                {...field}
+                            />
+                            <FieldDescription>
+                                Необязательно. Интервьюер учтёт требования вакансии.{" "}
+                                {field.value.length.toLocaleString("ru-RU")} /{" "}
+                                {VACANCY_MAX_LENGTH.toLocaleString("ru-RU")}
+                            </FieldDescription>
+                            <FieldError errors={[errors.vacancyText]} />
+                        </Field>
+                    )}
+                />
+
+                <Controller
+                    control={form.control}
+                    name="resumeText"
+                    render={({ field }) => (
+                        <ResumeField
+                            value={field.value}
+                            onChange={field.onChange}
+                            error={errors.resumeText}
+                        />
+                    )}
+                />
+
+                <Button type="submit" disabled={create.isPending || extractingResume}>
                     {create.isPending && <Spinner />}
                     Начать собеседование
                 </Button>
