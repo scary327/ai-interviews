@@ -71,6 +71,11 @@ public class InterviewService {
 				.orElseThrow(InterviewService::notFound);
 	}
 
+	@Transactional(readOnly = true)
+	public InternalInterviewContext getContextForInternal(UUID id) {
+		return interviewRepository.findContextById(id).orElseThrow(InterviewService::notFound);
+	}
+
 	@Transactional
 	public void start(UUID id) {
 		Interview interview = interviewRepository.findLockedById(id).orElseThrow(InterviewService::notFound);

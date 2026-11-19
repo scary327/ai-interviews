@@ -16,7 +16,8 @@
 - Restore state from plans, messages and evaluations. Preserve per-interview
   advisory locks, incomplete-answer rollback and safe retry after failure.
   Repeated finish returns the saved result.
-- Current flow: five questions, at most one follow-up per question; engine controls
+- Current flow: eight questions (older five-question plans run to their own length),
+  at most one follow-up per question; engine controls
   transitions. Final report has four criteria and a half-up rounded average.
   Coordinate rule changes with schemas/contracts and check boundary behavior.
 - `fake` produces canned questions/evaluations, not real model verification.
