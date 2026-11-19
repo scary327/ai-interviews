@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import tech.aiinterviews.core.resume.ResumeAnonymizer;
 import tech.aiinterviews.core.user.User;
 import tech.aiinterviews.core.user.UserRepository;
 
@@ -18,12 +19,15 @@ public class InterviewService {
 	private final InterviewRepository interviewRepository;
 	private final InterviewResultRepository interviewResultRepository;
 	private final UserRepository userRepository;
+	private final ResumeAnonymizer resumeAnonymizer;
 
 	public InterviewService(InterviewRepository interviewRepository,
-			InterviewResultRepository interviewResultRepository, UserRepository userRepository) {
+			InterviewResultRepository interviewResultRepository, UserRepository userRepository,
+			ResumeAnonymizer resumeAnonymizer) {
 		this.interviewRepository = interviewRepository;
 		this.interviewResultRepository = interviewResultRepository;
 		this.userRepository = userRepository;
+		this.resumeAnonymizer = resumeAnonymizer;
 	}
 
 	@Transactional
@@ -33,8 +37,17 @@ public class InterviewService {
 		List<String> topics = request.topics() == null
 				? List.of()
 				: request.topics().stream().map(String::trim).distinct().toList();
-		Interview interview = new Interview(user, request.position().trim(), request.level(), topics);
+		Interview interview = new Interview(user, request.position().trim(), request.level(), topics,
+				anonymize(request.resumeText(), user), anonymize(request.vacancyText(), user));
 		return InterviewResponse.from(interviewRepository.saveAndFlush(interview));
+	}
+
+	private String anonymize(String text, User user) {
+		if (text == null || text.isBlank()) {
+			return null;
+		}
+		String result = resumeAnonymizer.anonymize(text, user.getName());
+		return result.isEmpty() ? null : result;
 	}
 
 	@Transactional(readOnly = true)
