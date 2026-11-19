@@ -27,7 +27,14 @@ export const InterviewList = ({ status, limit }: InterviewListProps) => {
     const { data, isPending, error, refetch } = useListInterviews({
         query: {
             select: (list) =>
-                list.filter((i) => !status || i.status === status).slice(0, limit ?? list.length)
+                list
+                    .filter(
+                        (i) =>
+                            !status ||
+                            i.status === status ||
+                            (status === "IN_PROGRESS" && i.status === "CREATED")
+                    )
+                    .slice(0, limit ?? list.length)
         }
     });
 

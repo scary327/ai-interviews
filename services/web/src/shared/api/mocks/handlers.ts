@@ -52,7 +52,6 @@ const interviewHandlers = [
     }),
     http.post("*/api/interviews", async ({ request }) => {
         await delay();
-        // Бэкенд не отдаёт тексты в Interview
         const { resumeText, vacancyText, ...body } =
             (await request.json()) as CreateInterviewRequest;
         const interview: Interview = {

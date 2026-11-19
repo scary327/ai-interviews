@@ -64,7 +64,7 @@ export const ResumeField = ({ value, onChange, error }: ResumeFieldProps) => {
     };
 
     return (
-        <Field data-invalid={!!error || !!fileError}>
+        <Field data-invalid={!!error}>
             <div className="flex items-center justify-between gap-2">
                 <FieldLabel htmlFor="resumeText">Резюме</FieldLabel>
                 <Button
@@ -96,7 +96,7 @@ export const ResumeField = ({ value, onChange, error }: ResumeFieldProps) => {
                 placeholder="Вставьте текст резюме или загрузите файл"
                 className="max-h-64"
                 rows={4}
-                aria-invalid={!!error || !!fileError}
+                aria-invalid={!!error}
             />
             <FieldDescription>
                 Необязательно. PDF, DOCX или TXT до 5 МБ, файл заменит текст в поле. Почту,
