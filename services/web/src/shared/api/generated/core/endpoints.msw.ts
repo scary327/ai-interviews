@@ -15,6 +15,7 @@ import type {
 
 import {
   getCreateInterviewResponseMock,
+  getExtractResumeTextResponseMock,
   getGetInterviewResponseMock,
   getGetMeResponseMock,
   getListInterviewsResponseMock,
@@ -25,11 +26,12 @@ import {
 
 import type {
   Interview,
+  ResumeText,
   TokenResponse,
   User
 } from './model';
 
-export { getRegisterResponseMock, getLoginResponseMock, getRefreshTokenResponseMock, getGetMeResponseMock, getListInterviewsResponseMock, getCreateInterviewResponseMock, getGetInterviewResponseMock } from './endpoints.faker';
+export { getRegisterResponseMock, getLoginResponseMock, getRefreshTokenResponseMock, getGetMeResponseMock, getListInterviewsResponseMock, getCreateInterviewResponseMock, getExtractResumeTextResponseMock, getGetInterviewResponseMock } from './endpoints.faker';
 
 
 export const getRegisterMockHandler = (overrideResponse?: TokenResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<TokenResponse> | TokenResponse), options?: RequestHandlerOptions) => {
@@ -124,6 +126,18 @@ export const getCreateInterviewMockHandler = (overrideResponse?: Interview | ((i
   }, options)
 }
 
+export const getExtractResumeTextMockHandler = (overrideResponse?: ResumeText | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<ResumeText> | ResumeText), options?: RequestHandlerOptions) => {
+  return http.post('*/resumes/extract', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getExtractResumeTextResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
+
 export const getGetInterviewMockHandler = (overrideResponse?: Interview | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<Interview> | Interview), options?: RequestHandlerOptions) => {
   return http.get('*/interviews/:id', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
 
@@ -144,5 +158,6 @@ export const getCoreApiMock = () => [
   getGetMeMockHandler(),
   getListInterviewsMockHandler(),
   getCreateInterviewMockHandler(),
+  getExtractResumeTextMockHandler(),
   getGetInterviewMockHandler()
 ]

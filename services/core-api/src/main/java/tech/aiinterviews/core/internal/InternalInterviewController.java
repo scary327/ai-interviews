@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import tech.aiinterviews.core.interview.InternalInterviewContext;
 import tech.aiinterviews.core.interview.InternalInterviewResponse;
 import tech.aiinterviews.core.interview.InterviewResultDto;
 import tech.aiinterviews.core.interview.InterviewService;
@@ -29,6 +30,11 @@ public class InternalInterviewController {
 	@GetMapping("/{id}")
 	public InternalInterviewResponse get(@PathVariable UUID id) {
 		return interviewService.getForInternal(id);
+	}
+
+	@GetMapping("/{id}/context")
+	public InternalInterviewContext getContext(@PathVariable UUID id) {
+		return interviewService.getContextForInternal(id);
 	}
 
 	@PostMapping("/{id}/start")

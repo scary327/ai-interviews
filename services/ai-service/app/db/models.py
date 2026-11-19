@@ -43,7 +43,7 @@ class InterviewPlan(Base):
 class Evaluation(Base):
     __tablename__ = "evaluations"
     __table_args__ = (
-        CheckConstraint("question_index BETWEEN 0 AND 4", name="evaluations_question_index_check"),
+        CheckConstraint("question_index BETWEEN 0 AND 7", name="evaluations_question_index_check"),
         CheckConstraint("follow_up_no BETWEEN 0 AND 1", name="evaluations_follow_up_no_check"),
         CheckConstraint("score BETWEEN 0 AND 100", name="evaluations_score_check"),
         CheckConstraint("decision IN ('follow_up', 'next', 'finish')", name="evaluations_decision_check"),

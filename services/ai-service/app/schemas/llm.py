@@ -1,3 +1,4 @@
+import re
 from typing import Annotated, Literal
 
 from pydantic import AfterValidator, BaseModel, Field, field_validator
@@ -11,7 +12,10 @@ CRITERION_KEYS: tuple[CriterionKey, ...] = (
     "communication",
     "problem_solving",
 )
-PLAN_SIZE = 5
+PLAN_SIZE = 8
+_PROMPT_TAGS = re.compile(
+    r"<\s*/?\s*(question|answer|first_answer|follow_up|resume|vacancy)\b[^<>]*>", re.IGNORECASE
+)
 
 
 def _cut_utf16(value: str, limit: int) -> str:
@@ -36,9 +40,13 @@ def _items(limit: int):
     return AfterValidator(check)
 
 
+def _without_prompt_tags(value: str) -> str:
+    return _PROMPT_TAGS.sub("", value)
+
+
 class PlanQuestion(BaseModel):
-    text: Annotated[str, _text(500)]
-    topic: Annotated[str, _text(100)]
+    text: Annotated[str, AfterValidator(_without_prompt_tags), _text(500)]
+    topic: Annotated[str, AfterValidator(_without_prompt_tags), _text(100)]
 
 
 class PlanOut(BaseModel):
@@ -54,7 +62,7 @@ class AnswerEvaluationOut(BaseModel):
     score: int = Field(ge=0, le=100)
     comment: Annotated[str, _text(1000)]
     needs_follow_up: bool
-    follow_up_question: Annotated[str, _text(500)]
+    follow_up_question: Annotated[str, AfterValidator(_without_prompt_tags), _text(500)]
 
 
 class CriterionOut(BaseModel):

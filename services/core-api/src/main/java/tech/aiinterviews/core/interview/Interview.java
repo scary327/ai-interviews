@@ -45,6 +45,12 @@ public class Interview {
 	@Column(nullable = false)
 	private List<String> topics = new ArrayList<>();
 
+	@Column(name = "resume_text")
+	private String resumeText;
+
+	@Column(name = "vacancy_text")
+	private String vacancyText;
+
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
 	private InterviewStatus status = InterviewStatus.CREATED;
@@ -59,11 +65,14 @@ public class Interview {
 	protected Interview() {
 	}
 
-	public Interview(User user, String position, InterviewLevel level, List<String> topics) {
+	public Interview(User user, String position, InterviewLevel level, List<String> topics, String resumeText,
+			String vacancyText) {
 		this.user = user;
 		this.position = position;
 		this.level = level;
 		this.topics = topics == null ? new ArrayList<>() : new ArrayList<>(topics);
+		this.resumeText = resumeText;
+		this.vacancyText = vacancyText;
 	}
 
 	public UUID getId() {

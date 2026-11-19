@@ -25,6 +25,11 @@ class InterviewInfo(BaseModel):
     result: dict[str, Any] | None = None
 
 
+class InterviewContext(BaseModel):
+    resume_text: str | None = Field(default=None, alias="resumeText")
+    vacancy_text: str | None = Field(default=None, alias="vacancyText")
+
+
 class CoreApiClient:
     def __init__(self) -> None:
         self._http = httpx.AsyncClient(
@@ -45,6 +50,17 @@ class CoreApiClient:
             return InterviewInfo.model_validate_json(response.content)
         except ValidationError as e:
             logger.warning("core-api GET /internal/interviews/%s returned an unexpected body", interview_id)
+            raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=SERVICE_ERROR) from e
+
+    async def get_context(self, interview_id: UUID) -> InterviewContext:
+        response = await self._send("GET", f"/internal/interviews/{interview_id}/context")
+        self._expect(response, status.HTTP_200_OK)
+        try:
+            return InterviewContext.model_validate_json(response.content)
+        except ValidationError as e:
+            logger.warning(
+                "core-api GET /internal/interviews/%s/context returned an unexpected body", interview_id
+            )
             raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=SERVICE_ERROR) from e
 
     async def start_interview(self, interview_id: UUID) -> None:

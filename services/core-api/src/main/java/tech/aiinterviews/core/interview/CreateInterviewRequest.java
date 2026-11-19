@@ -9,6 +9,8 @@ import java.util.List;
 public record CreateInterviewRequest(
 		@NotBlank @Size(max = 255) String position,
 		@NotNull InterviewLevel level,
-		@Size(max = 20) List<@NotBlank @Size(max = 255) String> topics
+		@Size(max = 20) List<@NotBlank @Size(max = 255) String> topics,
+		@Size(max = 20000) String resumeText,
+		@Size(max = 10000) String vacancyText
 ) {
 }

@@ -8,12 +8,12 @@ from fastapi import HTTPException, status
 from fastapi.responses import StreamingResponse
 from fastapi.sse import format_sse_event
 
-from app.clients.core_api import CoreApiClient
+from app.clients.core_api import CoreApiClient, InterviewContext
 from app.db.models import Evaluation, InterviewPlan, Message
 from app.db.session import SessionFactory
 from app.llm.base import ChatMessage, LLMProvider
 from app.llm.errors import LLMError
-from app.schemas.llm import PLAN_SIZE, AnswerEvaluationOut, PlanOut
+from app.schemas.llm import AnswerEvaluationOut, PlanOut
 from app.services.interviews import (
     History,
     Turn,
@@ -29,10 +29,8 @@ from app.services.prompts import render
 Decision = Literal["follow_up", "next", "finish"]
 
 RESEND_ANSWER = "отправьте ответ ещё раз"
-_LAST_QUESTION = PLAN_SIZE - 1
-_FORCED_FOLLOW_UP_QUESTION = PLAN_SIZE - 2
 _CONTEXT_MESSAGES = 6
-_PLAN_TOKENS = 800
+_PLAN_TOKENS = 1600
 _EVALUATION_TOKENS = 400
 _REPLY_TOKENS = 400
 
@@ -54,12 +52,14 @@ def current_position(history: History) -> Position | None:
     return None
 
 
-def decide(evaluation: AnswerEvaluationOut, position: Position, history: History) -> Decision:
+def decide(
+    evaluation: AnswerEvaluationOut, position: Position, history: History, plan_size: int
+) -> Decision:
     had_follow_up = any(e.decision == "follow_up" for e in history.evaluations)
-    forced = not had_follow_up and position.question_index == _FORCED_FOLLOW_UP_QUESTION
+    forced = not had_follow_up and position.question_index == plan_size - 2
     if position.follow_up_no == 0 and (evaluation.needs_follow_up or forced):
         return "follow_up"
-    if position.question_index < _LAST_QUESTION:
+    if position.question_index < plan_size - 1:
         return "next"
     return "finish"
 
@@ -75,7 +75,7 @@ async def take_turn(
     if interview.status == "CREATED":
         await core.start_interview(turn.interview_id)
     values = interview_info_values(interview)
-    plan = history.plan or await _create_plan(turn.interview_id, values, llm)
+    plan = history.plan or await _create_plan(turn.interview_id, values, core, llm)
     questions = [q["text"] for q in plan.questions]
 
     if not history.messages:
@@ -92,7 +92,7 @@ async def take_turn(
                 detail="Вопросы закончились — нажмите «Завершить», чтобы получить отчёт",
             )
         answer = await _evaluate(text, position, questions, history, values, llm)
-        decision = decide(answer, position, history)
+        decision = decide(answer, position, history, len(questions))
         evaluation = Evaluation(
             interview_id=turn.interview_id,
             question_index=position.question_index,
@@ -116,16 +116,24 @@ async def take_turn(
     )
 
 
-async def _create_plan(interview_id: UUID, values: dict[str, str], llm: LLMProvider) -> InterviewPlan:
+def plan_messages(values: dict[str, str], context: InterviewContext) -> list[ChatMessage]:
+    parts = ["Составь план собеседования."]
+    if context.vacancy_text:
+        parts.append(f"<vacancy>{candidate_text(context.vacancy_text)}</vacancy>")
+    if context.resume_text:
+        parts.append(f"<resume>{candidate_text(context.resume_text)}</resume>")
+    return [
+        {"role": "system", "content": render("plan", **values)},
+        {"role": "user", "content": "\n\n".join(parts)},
+    ]
+
+
+async def _create_plan(
+    interview_id: UUID, values: dict[str, str], core: CoreApiClient, llm: LLMProvider
+) -> InterviewPlan:
+    context = await core.get_context(interview_id)
     out = await llm_call(
-        llm.complete_json(
-            [
-                {"role": "system", "content": render("plan", **values)},
-                {"role": "user", "content": "Составь план собеседования."},
-            ],
-            schema=PlanOut,
-            max_tokens=_PLAN_TOKENS,
-        ),
+        llm.complete_json(plan_messages(values, context), schema=PlanOut, max_tokens=_PLAN_TOKENS),
         RESEND_ANSWER,
     )
     async with SessionFactory() as session:
@@ -156,7 +164,7 @@ async def _evaluate(
         )
         if base is not None and base.message_id in messages:
             parts.append(f"<first_answer>{candidate_text(messages[base.message_id].text)}</first_answer>")
-        parts.append(f"<follow_up>{history.messages[-1].text}</follow_up>")
+        parts.append(f"<follow_up>{candidate_text(history.messages[-1].text)}</follow_up>")
     parts.append(f"<answer>{candidate_text(text)}</answer>")
     return await llm_call(
         llm.complete_json(

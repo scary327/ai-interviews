@@ -114,6 +114,33 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Interview' }
 
+  /resumes/extract:
+    post:
+      operationId: extractResumeText
+      tags: [resumes]
+      summary: Извлечь обезличенный текст резюме из файла (PDF, DOCX, TXT до 5 МБ); файл не сохраняется
+      security: [{ bearer: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ResumeText' }
+        '400': { description: Нет файла в запросе }
+        '401': { description: Нет или просрочен токен }
+        '413': { description: Файл больше 5 МБ }
+        '415': { description: 'Не PDF, DOCX или TXT, или запрос не multipart/form-data' }
+        '422': { description: 'В файле нет текста, он защищён паролем, повреждён или текст длиннее 100 000 символов' }
+
   /interviews/{id}:
     get:
       operationId: getInterview
@@ -184,6 +211,14 @@ components:
         topics:
           type: array
           items: { type: string }
+        resumeText: { type: string, maxLength: 20000, description: Текст резюме; обезличивается при сохранении }
+        vacancyText: { type: string, maxLength: 10000, description: Текст вакансии; обезличивается при сохранении }
+
+    ResumeText:
+      type: object
+      required: [text]
+      properties:
+        text: { type: string }
 
     Interview:
       type: object

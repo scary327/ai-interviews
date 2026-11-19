@@ -61,6 +61,7 @@ web ──POST /api/auth/login──► core-api ──► { accessToken } + ref
 2. web ──POST /ai/interviews/{id}/messages─► ai-service   (Authorization: Bearer <jwt>)
        ai-service ──GET /internal/interviews/{id}────────► core-api   параметры и userId (сверка с sub)
        ai-service ──POST /internal/interviews/{id}/start─► core-api   на первом сообщении: IN_PROGRESS
+       ai-service ──GET /internal/interviews/{id}/context► core-api   один раз, для плана: резюме и вакансия
        ◄──────── text/event-stream ─────────              токены ответа LLM стримом
 3. ... повторяется ...
 4. web ──POST /ai/interviews/{id}/finish───► ai-service   считает оценку

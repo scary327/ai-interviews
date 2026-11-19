@@ -29,6 +29,23 @@ paths:
         '401': { description: Нет или неверный X-Internal-Token }
         '404': { description: Собеседование не найдено }
 
+  /interviews/{id}/context:
+    get:
+      operationId: internalGetInterviewContext
+      tags: [internal]
+      summary: (ai-service → core-api) Обезличенные резюме и вакансия собеседования
+      description: Вызывается при составлении плана вопросов (повторно — если составить план не удалось). null — текст не задан.
+      parameters:
+        - $ref: '#/components/parameters/InterviewId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InternalInterviewContext' }
+        '401': { description: Нет или неверный X-Internal-Token }
+        '404': { description: Собеседование не найдено }
+
   /interviews/{id}/start:
     post:
       operationId: internalStartInterview
@@ -88,3 +105,10 @@ components:
           required: [userId]
           properties:
             userId: { type: string, format: uuid }
+
+    InternalInterviewContext:
+      type: object
+      required: [resumeText, vacancyText]
+      properties:
+        resumeText: { type: [string, 'null'] }
+        vacancyText: { type: [string, 'null'] }

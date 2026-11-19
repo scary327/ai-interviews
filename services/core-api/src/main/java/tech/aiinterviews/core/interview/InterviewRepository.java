@@ -4,6 +4,7 @@ import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,5 +23,9 @@ public interface InterviewRepository extends JpaRepository<Interview, UUID> {
 
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	Optional<Interview> findLockedById(UUID id);
+
+	@Query("select new tech.aiinterviews.core.interview.InternalInterviewContext(i.resumeText, i.vacancyText) "
+			+ "from Interview i where i.id = :id")
+	Optional<InternalInterviewContext> findContextById(UUID id);
 
 }

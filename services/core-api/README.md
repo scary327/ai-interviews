@@ -18,6 +18,7 @@ core-api/
 │   │   └── dto/
 │   ├── user/            # профиль пользователя
 │   ├── interview/       # создание интервью, статусы, история
+│   ├── resume/          # текст резюме из PDF/DOCX/TXT, обезличивание
 │   ├── internal/        # /internal/* — эндпоинты для ai-service
 │   ├── common/          # ошибки (ProblemDetail), утилиты
 │   └── config/          # SecurityConfig, CORS, бины
